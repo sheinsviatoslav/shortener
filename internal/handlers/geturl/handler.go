@@ -1,18 +1,20 @@
 package geturl
 
 import (
+	"github.com/go-chi/chi/v5"
 	"net/http"
 )
 
-func GetHandler(w http.ResponseWriter, req *http.Request, storage map[string]string) {
-	if req.URL.Path == "/" {
+func Handler(w http.ResponseWriter, req *http.Request, storage map[string]string) {
+	id := chi.URLParam(req, "id")
+	if id == "" {
 		http.Error(w, "empty path", http.StatusBadRequest)
 		return
 	}
 
 	var resultURL string
 	for k, v := range storage {
-		if v == req.URL.Path {
+		if v == id {
 			resultURL = k
 			break
 		}

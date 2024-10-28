@@ -9,7 +9,7 @@ import (
 
 var defaultHashLength = 8
 
-func PostHandler(w http.ResponseWriter, req *http.Request, storage map[string]string) {
+func Handler(w http.ResponseWriter, req *http.Request, storage map[string]string) {
 	bodyBytes, err := io.ReadAll(req.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -42,8 +42,9 @@ func PostHandler(w http.ResponseWriter, req *http.Request, storage map[string]st
 			return
 		}
 	} else {
-		u.Path = req.URL.Path + hash.Generator(defaultHashLength)
-		storage[body] = u.Path
+		hashVal := hash.Generator(defaultHashLength)
+		u.Path = hashVal
+		storage[body] = hashVal
 
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write([]byte(u.String()))

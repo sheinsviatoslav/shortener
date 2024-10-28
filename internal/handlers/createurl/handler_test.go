@@ -57,7 +57,7 @@ func TestGetHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(test.url))
 			w := httptest.NewRecorder()
-			PostHandler(w, request, storage)
+			Handler(w, request, storage)
 
 			res := w.Result()
 			assert.Equal(t, test.want.code, res.StatusCode)
@@ -73,7 +73,7 @@ func TestGetHandler(t *testing.T) {
 	t.Run("successfully created", func(t *testing.T) {
 		request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader("https://practicum.yandex.ru/"))
 		w := httptest.NewRecorder()
-		PostHandler(w, request, storage)
+		Handler(w, request, storage)
 
 		res := w.Result()
 		assert.Equal(t, 201, res.StatusCode)
