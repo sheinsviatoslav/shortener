@@ -1,6 +1,7 @@
 package createurl
 
 import (
+	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 	"io"
 	"net/http"
@@ -17,37 +18,36 @@ func Handler(w http.ResponseWriter, req *http.Request, storage map[string]string
 	}
 
 	body := string(bodyBytes)
-
 	if body == "" {
 		http.Error(w, "url is required", http.StatusBadRequest)
 		return
 	}
 
-	u, err := url.ParseRequestURI(body)
-	if err != nil {
+	if _, err := url.ParseRequestURI(body); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	u.Scheme = "http"
-	u.Host = req.Host
 	w.Header().Set("Content-Type", "text/plain")
 
 	if foundURL, ok := storage[body]; ok {
-		u.Path = foundURL
+		u, _ := url.Parse(*config.ResultBaseAddr)
+		relative, _ := url.Parse(foundURL)
+
 		w.WriteHeader(http.StatusOK)
-		_, err = w.Write([]byte(u.String()))
+		_, err = w.Write([]byte(u.ResolveReference(relative).String()))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
 		hashVal := hash.Generator(defaultHashLength)
-		u.Path = hashVal
 		storage[body] = hashVal
+		u, _ := url.Parse(*config.ResultBaseAddr)
+		relative, _ := url.Parse(hashVal)
 
 		w.WriteHeader(http.StatusCreated)
-		_, err = w.Write([]byte(u.String()))
+		_, err = w.Write([]byte(u.ResolveReference(relative).String()))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

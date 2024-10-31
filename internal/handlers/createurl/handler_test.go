@@ -27,7 +27,7 @@ func TestGetHandler(t *testing.T) {
 			url:  "https://yandex.ru",
 			want: want{
 				code:        200,
-				response:    "http://example.com/454FcJTrKC",
+				response:    "http://localhost:8080/454FcJTrKC",
 				contentType: "text/plain",
 			},
 		},
@@ -81,7 +81,7 @@ func TestGetHandler(t *testing.T) {
 		resBody, err := io.ReadAll(res.Body)
 		require.NoError(t, err)
 
-		isMatch, _ := regexp.MatchString("http://example.com/[0-9a-zA-Z]{8}", string(resBody))
+		isMatch, _ := regexp.MatchString("http://localhost:8080/[0-9a-zA-Z]{8}", string(resBody))
 		require.NoError(t, err)
 
 		assert.Equal(t, true, isMatch)
