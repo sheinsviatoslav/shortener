@@ -8,8 +8,7 @@ import (
 
 func main() {
 	config.Init()
-	err := http.ListenAndServe(*config.ServerAddr, routes.MainRouter())
-	if err != nil {
+	if err := http.ListenAndServe(*config.ServerAddr, routes.MainRouter()); err != nil {
 		panic(err)
 	}
 }

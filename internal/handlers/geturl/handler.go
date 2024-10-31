@@ -28,8 +28,8 @@ func Handler(w http.ResponseWriter, req *http.Request, storage map[string]string
 	w.Header().Set("Content-Type", "text/plain")
 	w.Header().Add("Location", resultURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
-	_, err := w.Write([]byte(resultURL))
-	if err != nil {
+
+	if _, err := w.Write([]byte(resultURL)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -31,24 +31,22 @@ func Handler(w http.ResponseWriter, req *http.Request, storage map[string]string
 	w.Header().Set("Content-Type", "text/plain")
 
 	if foundURL, ok := storage[body]; ok {
-		u, _ := url.Parse(*config.ResultBaseAddr)
+		u, _ := url.Parse(*config.BaseURL)
 		relative, _ := url.Parse(foundURL)
 
 		w.WriteHeader(http.StatusOK)
-		_, err = w.Write([]byte(u.ResolveReference(relative).String()))
-		if err != nil {
+		if _, err = w.Write([]byte(u.ResolveReference(relative).String())); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	} else {
 		hashVal := hash.Generator(defaultHashLength)
 		storage[body] = hashVal
-		u, _ := url.Parse(*config.ResultBaseAddr)
+		u, _ := url.Parse(*config.BaseURL)
 		relative, _ := url.Parse(hashVal)
 
 		w.WriteHeader(http.StatusCreated)
-		_, err = w.Write([]byte(u.ResolveReference(relative).String()))
-		if err != nil {
+		if _, err = w.Write([]byte(u.ResolveReference(relative).String())); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
