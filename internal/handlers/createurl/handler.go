@@ -8,7 +8,9 @@ import (
 	"net/url"
 )
 
-var defaultHashLength = 8
+const (
+	DefaultHashLength = 8
+)
 
 func Handler(w http.ResponseWriter, req *http.Request, storage map[string]string) {
 	bodyBytes, err := io.ReadAll(req.Body)
@@ -40,7 +42,7 @@ func Handler(w http.ResponseWriter, req *http.Request, storage map[string]string
 			return
 		}
 	} else {
-		hashVal := hash.Generator(defaultHashLength)
+		hashVal := hash.Generator(DefaultHashLength)
 		storage[body] = hashVal
 		u, _ := url.Parse(*config.BaseURL)
 		relative, _ := url.Parse(hashVal)

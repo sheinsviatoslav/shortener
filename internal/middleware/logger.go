@@ -29,8 +29,8 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.responseData.status = statusCode
 }
 
-func WithLogger(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func WithLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		l := logger.Get()
 		sugar := l.Sugar()
 
@@ -55,5 +55,5 @@ func WithLogger(next http.HandlerFunc) http.HandlerFunc {
 			"duration", duration,
 			"size", responseData.size,
 		)
-	}
+	})
 }
