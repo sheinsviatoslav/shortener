@@ -13,6 +13,8 @@ import (
 func MainRouter() chi.Router {
 	r := chi.NewRouter()
 	r.Use(middleware.WithLogger)
+	r.Use(middleware.GzipHandle)
+
 	r.Get("/{id}", func(w http.ResponseWriter, req *http.Request) {
 		geturl.Handler(w, req, storage.URLMap)
 	})
