@@ -8,35 +8,13 @@ import (
 	"strings"
 )
 
-type compressWriter struct {
-	w  http.ResponseWriter
-	zw *gzip.Writer
+type gzipWriter struct {
+	http.ResponseWriter
+	Writer io.Writer
 }
 
-func newCompressWriter(w http.ResponseWriter) *compressWriter {
-	return &compressWriter{
-		w:  w,
-		zw: gzip.NewWriter(w),
-	}
-}
-
-func (c *compressWriter) Header() http.Header {
-	return c.w.Header()
-}
-
-func (c *compressWriter) Write(p []byte) (int, error) {
-	return c.zw.Write(p)
-}
-
-func (c *compressWriter) WriteHeader(statusCode int) {
-	if statusCode < 300 {
-		c.w.Header().Set("Content-Encoding", "gzip")
-	}
-	c.w.WriteHeader(statusCode)
-}
-
-func (c *compressWriter) Close() error {
-	return c.zw.Close()
+func (w gzipWriter) Write(b []byte) (int, error) {
+	return w.Writer.Write(b)
 }
 
 type compressReader struct {
@@ -70,12 +48,19 @@ func (c *compressReader) Close() error {
 func GzipHandle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w
+
 		supportsGzipEncoding := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip")
 		allowedContentTypes := []string{"text/html", "application/json"}
 		if supportsGzipEncoding && slices.Contains(allowedContentTypes, r.Header.Get("Content-Type")) {
-			cw := newCompressWriter(w)
-			ow = cw
-			defer cw.Close()
+			gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
+			if err != nil {
+				io.WriteString(w, err.Error())
+				return
+			}
+			defer gz.Close()
+
+			w.Header().Set("Content-Encoding", "gzip")
+			ow = gzipWriter{ResponseWriter: w, Writer: gz}
 		}
 
 		sendsGzip := strings.Contains(r.Header.Get("Content-Encoding"), "gzip")

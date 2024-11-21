@@ -2,11 +2,13 @@ package createurl
 
 import (
 	"fmt"
+	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -25,10 +27,10 @@ func TestGetHandler(t *testing.T) {
 	}{
 		{
 			name: "url already exists",
-			url:  "https://yandex.ru",
+			url:  "https://practicum.yandex.ru/",
 			want: want{
 				code:        200,
-				response:    "http://localhost:8080/454FcJTrKC",
+				response:    "http://localhost:8080/99XGYq4c",
 				contentType: "text/plain",
 			},
 		},
@@ -51,14 +53,16 @@ func TestGetHandler(t *testing.T) {
 			},
 		},
 	}
-	storage := map[string]string{
-		"https://yandex.ru": "/454FcJTrKC",
-	}
+
+	t.Setenv("FILE_STORAGE_PATH", "mocks/url_storage_already_exists.json")
+	config.Init()
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+
 			request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(test.url))
 			w := httptest.NewRecorder()
-			Handler(w, request, storage)
+			Handler(w, request)
 
 			res := w.Result()
 			assert.Equal(t, test.want.code, res.StatusCode)
@@ -72,9 +76,12 @@ func TestGetHandler(t *testing.T) {
 	}
 
 	t.Run("successfully created", func(t *testing.T) {
+		fileName := "mocks/url_storage_create_new_item.json"
+		t.Setenv("FILE_STORAGE_PATH", fileName)
+		config.Init()
 		request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader("https://practicum.yandex.ru/"))
 		w := httptest.NewRecorder()
-		Handler(w, request, storage)
+		Handler(w, request)
 
 		res := w.Result()
 		assert.Equal(t, 201, res.StatusCode)
@@ -87,6 +94,11 @@ func TestGetHandler(t *testing.T) {
 
 		assert.Equal(t, true, isMatch)
 		assert.Equal(t, "text/plain", res.Header.Get("Content-Type"))
+
+		e := os.Remove(fileName)
+		if e != nil {
+			require.NoError(t, err)
+		}
 	})
 
 }

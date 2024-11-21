@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/createurl"
+	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 	"net/http"
 	"net/url"
+	"os"
 )
 
 type ReqBody struct {
@@ -18,7 +20,7 @@ type RespBody struct {
 	Result string `json:"result"`
 }
 
-func Handler(w http.ResponseWriter, r *http.Request, storage map[string]string) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	var reqBody ReqBody
 	var buf bytes.Buffer
 
@@ -42,16 +44,71 @@ func Handler(w http.ResponseWriter, r *http.Request, storage map[string]string) 
 		return
 	}
 
-	id, isURLExists := storage[reqBody.URL]
+	items := make([]storage.URLItem, 0)
+
+	if _, err := os.Stat(*config.FileStoragePath); err == nil {
+		var fileReader, err = storage.NewConsumer(*config.FileStoragePath)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		defer fileReader.Close()
+
+		if fileReader != nil {
+			urlItems, err := fileReader.ReadURLItems()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			items = urlItems.Items
+		}
+	}
+
+	var shortURL string
+	isURLExists := false
+
+	for _, urlItem := range items {
+		if urlItem.OriginalURL == reqBody.URL {
+			isURLExists = true
+			shortURL = urlItem.ShortURL
+			break
+		}
+	}
 
 	if !isURLExists {
-		hashVal := hash.Generator(createurl.DefaultHashLength)
-		storage[reqBody.URL] = hashVal
-		id = hashVal
+		shortURL = hash.Generator(createurl.DefaultHashLength)
+		var fileWriter, err = storage.NewProducer(*config.FileStoragePath)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		defer fileWriter.Close()
+
+		if fileWriter != nil {
+			id := 1
+			if len(items) > 0 {
+				id = items[len(items)-1].ID + 1
+			}
+			items = append(items, storage.URLItem{
+				ID:          id,
+				OriginalURL: reqBody.URL,
+				ShortURL:    shortURL,
+			})
+
+			if err = fileWriter.WriteURLItems(&storage.URLItems{
+				Items: items,
+			}); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
 	}
 
 	u, _ := url.Parse(*config.BaseURL)
-	relative, _ := url.Parse(id)
+	relative, _ := url.Parse(shortURL)
 
 	respBody := RespBody{
 		Result: u.ResolveReference(relative).String(),

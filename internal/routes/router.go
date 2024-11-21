@@ -6,8 +6,6 @@ import (
 	"github.com/sheinsviatoslav/shortener/internal/handlers/geturl"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/shorten"
 	"github.com/sheinsviatoslav/shortener/internal/middleware"
-	"github.com/sheinsviatoslav/shortener/internal/storage"
-	"net/http"
 )
 
 func MainRouter() chi.Router {
@@ -15,15 +13,9 @@ func MainRouter() chi.Router {
 	r.Use(middleware.WithLogger)
 	r.Use(middleware.GzipHandle)
 
-	r.Get("/{id}", func(w http.ResponseWriter, req *http.Request) {
-		geturl.Handler(w, req, storage.URLMap)
-	})
-	r.Post("/", func(w http.ResponseWriter, req *http.Request) {
-		createurl.Handler(w, req, storage.URLMap)
-	})
-	r.Post("/api/shorten", func(w http.ResponseWriter, req *http.Request) {
-		shorten.Handler(w, req, storage.URLMap)
-	})
+	r.Get("/{id}", geturl.Handler)
+	r.Post("/", createurl.Handler)
+	r.Post("/api/shorten", shorten.Handler)
 
 	return r
 }
