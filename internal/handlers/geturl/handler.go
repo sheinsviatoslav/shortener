@@ -15,33 +15,35 @@ func Handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	items := make([]storage.URLItem, 0)
+	if _, err := os.Stat(*config.FileStoragePath); err != nil {
+		http.Error(w, "file storage not found", http.StatusNotFound)
+		return
+	}
 
-	if _, err := os.Stat(*config.FileStoragePath); err == nil {
-		var fileReader, err = storage.NewConsumer(*config.FileStoragePath)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	fileReader, err := storage.NewConsumer(*config.FileStoragePath)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-		defer fileReader.Close()
+	defer fileReader.Close()
 
-		if fileReader != nil {
-			urlItems, err := fileReader.ReadURLItems()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+	urlItems, err := storage.ReadURLItems()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-			items = urlItems.Items
-		}
+	if urlItems == nil {
+		http.Error(w, "empty url items", http.StatusBadRequest)
+		return
 	}
 
 	var resultURL string
 
-	for _, urlItem := range items {
-		if urlItem.ShortURL == id {
-			resultURL = urlItem.OriginalURL
+	for originalURL, shortURL := range *urlItems {
+		if shortURL == id {
+			resultURL = originalURL
 			break
 		}
 	}

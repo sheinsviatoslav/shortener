@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 )
 
 const (
@@ -32,74 +31,36 @@ func Handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	items := make([]storage.URLItem, 0)
+	urlMap := storage.URLMap{}
 
-	if _, err := os.Stat(*config.FileStoragePath); err == nil {
-		var fileReader, err = storage.NewConsumer(*config.FileStoragePath)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		defer fileReader.Close()
-
-		if fileReader != nil {
-			urlItems, err := fileReader.ReadURLItems()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			items = urlItems.Items
-		}
+	urlItems, err := storage.ReadURLItems()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	var shortURL string
-	var isURLExists bool
-
-	for _, urlItem := range items {
-		if urlItem.OriginalURL == inputURL {
-			isURLExists = true
-			shortURL = urlItem.ShortURL
-			break
-		}
+	if urlItems != nil {
+		urlMap = *urlItems
 	}
 
-	if !isURLExists {
+	shortURL, isOriginalURLExists := urlMap[inputURL]
+
+	if !isOriginalURLExists {
 		shortURL = hash.Generator(DefaultHashLength)
-		var fileWriter, err = storage.NewProducer(*config.FileStoragePath)
+		urlMap[inputURL] = shortURL
+		err := storage.WriteURLItemToFile(urlMap)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		defer fileWriter.Close()
-
-		if fileWriter != nil {
-			id := 1
-			if len(items) > 0 {
-				id = items[len(items)-1].ID + 1
-			}
-			items = append(items, storage.URLItem{
-				ID:          id,
-				OriginalURL: inputURL,
-				ShortURL:    shortURL,
-			})
-
-			if err = fileWriter.WriteURLItems(&storage.URLItems{
-				Items: items,
-			}); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-		}
 	}
 
 	u, _ := url.Parse(*config.BaseURL)
 	relative, _ := url.Parse(shortURL)
 
 	w.Header().Set("Content-Type", "text/plain")
-	if isURLExists {
+	if isOriginalURLExists {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusCreated)

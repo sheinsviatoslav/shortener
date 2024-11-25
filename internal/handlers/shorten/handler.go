@@ -9,7 +9,6 @@ import (
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 	"net/http"
 	"net/url"
-	"os"
 )
 
 type ReqBody struct {
@@ -44,66 +43,26 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := make([]storage.URLItem, 0)
+	urlMap := storage.URLMap{}
 
-	if _, err := os.Stat(*config.FileStoragePath); err == nil {
-		var fileReader, err = storage.NewConsumer(*config.FileStoragePath)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		defer fileReader.Close()
-
-		if fileReader != nil {
-			urlItems, err := fileReader.ReadURLItems()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			items = urlItems.Items
-		}
+	urlItems, err := storage.ReadURLItems()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	var shortURL string
-	isURLExists := false
-
-	for _, urlItem := range items {
-		if urlItem.OriginalURL == reqBody.URL {
-			isURLExists = true
-			shortURL = urlItem.ShortURL
-			break
-		}
+	if urlItems != nil {
+		urlMap = *urlItems
 	}
 
-	if !isURLExists {
+	shortURL, isOriginalURLExists := urlMap[reqBody.URL]
+
+	if !isOriginalURLExists {
 		shortURL = hash.Generator(createurl.DefaultHashLength)
-		var fileWriter, err = storage.NewProducer(*config.FileStoragePath)
-		if err != nil {
+		urlMap[reqBody.URL] = shortURL
+		if err := storage.WriteURLItemToFile(urlMap); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
-		}
-
-		defer fileWriter.Close()
-
-		if fileWriter != nil {
-			id := 1
-			if len(items) > 0 {
-				id = items[len(items)-1].ID + 1
-			}
-			items = append(items, storage.URLItem{
-				ID:          id,
-				OriginalURL: reqBody.URL,
-				ShortURL:    shortURL,
-			})
-
-			if err = fileWriter.WriteURLItems(&storage.URLItems{
-				Items: items,
-			}); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
 		}
 	}
 
@@ -120,7 +79,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if isURLExists {
+	if isOriginalURLExists {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusCreated)
