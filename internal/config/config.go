@@ -8,13 +8,15 @@ import (
 )
 
 type Config struct {
-	ServerAddr string `env:"SERVER_ADDRESS"`
-	BaseURL    string `env:"BASE_URL"`
+	ServerAddr      string `env:"SERVER_ADDRESS"`
+	BaseURL         string `env:"BASE_URL"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 }
 
 var (
-	ServerAddr = flag.String("a", ":8080", "server address")
-	BaseURL    = flag.String("b", "http://localhost:8080/", "base address of shortened URL")
+	ServerAddr      = flag.String("a", ":8080", "server address")
+	BaseURL         = flag.String("b", "http://localhost:8080/", "base address of shortened URL")
+	FileStoragePath = flag.String("f", "url_storage.json", "file storage path")
 )
 
 func Init() {
@@ -30,6 +32,10 @@ func Init() {
 
 	if cfg.BaseURL != "" {
 		*BaseURL = cfg.BaseURL
+	}
+
+	if cfg.FileStoragePath != "" {
+		*FileStoragePath = cfg.FileStoragePath
 	}
 
 	if _, err := url.ParseRequestURI(*BaseURL); err != nil {
