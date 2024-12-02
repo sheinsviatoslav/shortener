@@ -90,7 +90,7 @@ func TestGetHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			body, _ := json.Marshal(test.body)
-			request := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+			request := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
 			w := httptest.NewRecorder()
 			Handler(w, request)
 
