@@ -1,12 +1,22 @@
 package ping
 
 import (
-	"github.com/sheinsviatoslav/shortener/internal/storage"
+	"database/sql"
 	"net/http"
 )
 
-func Handler(w http.ResponseWriter, req *http.Request) {
-	if err := storage.DB.PingContext(req.Context()); err != nil {
+type Handler struct {
+	db *sql.DB
+}
+
+func NewHandler(db *sql.DB) *Handler {
+	return &Handler{
+		db: db,
+	}
+}
+
+func (h *Handler) Handle(w http.ResponseWriter, req *http.Request) {
+	if err := h.db.PingContext(req.Context()); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

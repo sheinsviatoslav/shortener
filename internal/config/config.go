@@ -18,7 +18,7 @@ var (
 	ServerAddr      = flag.String("a", ":8080", "server address")
 	BaseURL         = flag.String("b", "http://localhost:8080/", "base address of shortened URL")
 	FileStoragePath = flag.String("f", "url_storage.json", "file storage path")
-	DatabaseDSN     = flag.String("d", "host=localhost port=5432 user=postgres password=postgres dbname=urls", "database data source name")
+	DatabaseDSN     = flag.String("d", "", "database data source name")
 )
 
 func Init() {
