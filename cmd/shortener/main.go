@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/routes"
 	"log"
