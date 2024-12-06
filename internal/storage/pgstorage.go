@@ -3,14 +3,11 @@ package storage
 import (
 	"database/sql"
 	"errors"
+	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
+	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
+	"net/url"
 )
-
-type Storage interface {
-	GetOriginalURLByShortURL(string) (string, error)
-	GetShortURLByOriginalURL(string) (string, bool, error)
-	AddNewURL(string, string) error
-}
 
 type PgStorage struct {
 	DB *sql.DB
@@ -31,7 +28,7 @@ func (p *PgStorage) Connect() error {
 
 	_, err = p.DB.Exec(
 		"CREATE TABLE IF NOT EXISTS urls (" +
-			"id SERIAL PRIMARY KEY, " +
+			"id uuid PRIMARY KEY DEFAULT GEN_RANDOM_UUID(), " +
 			"original_url TEXT NOT NULL UNIQUE, " +
 			"short_url TEXT NOT NULL UNIQUE)")
 	if err != nil {
@@ -67,10 +64,51 @@ func (p *PgStorage) GetShortURLByOriginalURL(originalURL string) (string, bool, 
 }
 
 func (p *PgStorage) AddNewURL(originalURL string, shortURL string) error {
-	_, err := p.DB.Exec(`INSERT INTO urls (original_url, short_url) VALUES($1, $2)`, originalURL, shortURL)
-	if err != nil {
+	if _, err := p.DB.Exec(`INSERT INTO urls (original_url, short_url) VALUES($1, $2)`, originalURL, shortURL); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (p *PgStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
+	var output OutputManyUrls
+	tx, err := p.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range urls {
+		if item.OriginalURL == "" {
+			tx.Rollback()
+			return nil, errors.New("url is required")
+		}
+
+		if _, err = url.ParseRequestURI(item.OriginalURL); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		shortURL, isExists, dbErr := p.GetShortURLByOriginalURL(item.OriginalURL)
+		if dbErr != nil {
+			tx.Rollback()
+			return nil, dbErr
+		}
+
+		if !isExists {
+			shortURL = hash.Generator(common.DefaultHashLength)
+			if _, err = tx.Exec(`INSERT INTO urls (original_url, short_url) VALUES($1, $2)`, item.OriginalURL, shortURL); err != nil {
+				tx.Rollback()
+				return nil, err
+			}
+		}
+
+		u, _ := url.Parse(*config.BaseURL)
+		relative, _ := url.Parse(shortURL)
+
+		output = append(output, OutputManyUrlsItem{CorrelationID: item.CorrelationID, ShortURL: u.ResolveReference(relative).String()})
+	}
+
+	tx.Commit()
+	return output, nil
 }

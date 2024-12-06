@@ -8,6 +8,7 @@ import (
 	"github.com/sheinsviatoslav/shortener/internal/handlers/geturl"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/ping"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/shorten"
+	"github.com/sheinsviatoslav/shortener/internal/handlers/shortenbatch"
 	"github.com/sheinsviatoslav/shortener/internal/middleware"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"log"
@@ -38,6 +39,7 @@ func MainRouter() chi.Router {
 	r.Get("/{shortURL}", geturl.NewHandler(st).Handle)
 	r.Post("/", createurl.NewHandler(st).Handle)
 	r.Post("/api/shorten", shorten.NewHandler(st).Handle)
+	r.Post("/api/shorten/batch", shortenbatch.NewHandler(st).Handle)
 
 	return r
 }

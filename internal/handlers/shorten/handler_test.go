@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang/mock/gomock"
+	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
-	"github.com/sheinsviatoslav/shortener/internal/handlers/createurl"
 	"github.com/sheinsviatoslav/shortener/internal/mocks"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"github.com/stretchr/testify/assert"
@@ -147,7 +147,10 @@ func TestShortenHandler(t *testing.T) {
 			require.NoError(t, err)
 
 			if test.name == "successfully created" {
-				isMatch, _ := regexp.MatchString(fmt.Sprintf("http://localhost:8080/[0-9a-zA-Z]{%d}", createurl.DefaultHashLength), string(resBody))
+				isMatch, _ := regexp.MatchString(fmt.Sprintf(
+					"http://localhost:8080/[0-9a-zA-Z]{%d}",
+					common.DefaultHashLength,
+				), string(resBody))
 				require.NoError(t, err)
 				assert.Equal(t, true, isMatch)
 			} else {
@@ -177,7 +180,10 @@ func TestShortenHandler(t *testing.T) {
 			require.NoError(t, err)
 
 			if test.name == "successfully created" {
-				isMatch, _ := regexp.MatchString(fmt.Sprintf("http://localhost:8080/[0-9a-zA-Z]{%d}", createurl.DefaultHashLength), string(resBody))
+				isMatch, _ := regexp.MatchString(fmt.Sprintf(
+					"http://localhost:8080/[0-9a-zA-Z]{%d}",
+					common.DefaultHashLength,
+				), string(resBody))
 				require.NoError(t, err)
 				assert.Equal(t, true, isMatch)
 			} else {
@@ -215,7 +221,10 @@ func TestShortenHandler(t *testing.T) {
 			require.NoError(t, err)
 
 			if test.name == "successfully created" {
-				isMatch, _ := regexp.MatchString(fmt.Sprintf("http://localhost:8080/[0-9a-zA-Z]{%d}", createurl.DefaultHashLength), string(resBody))
+				isMatch, _ := regexp.MatchString(fmt.Sprintf(
+					"http://localhost:8080/[0-9a-zA-Z]{%d}",
+					common.DefaultHashLength,
+				), string(resBody))
 				require.NoError(t, err)
 				assert.Equal(t, true, isMatch)
 			} else {

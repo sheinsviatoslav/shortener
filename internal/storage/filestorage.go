@@ -3,8 +3,12 @@ package storage
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
+	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
+	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 	"io"
+	"net/url"
 	"os"
 )
 
@@ -64,6 +68,42 @@ func (fs *FileStorage) AddNewURL(originalURL string, shortURL string) error {
 	}
 
 	return nil
+}
+
+func (fs *FileStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
+	var output OutputManyUrls
+	urlItems, readFileErr := fs.ReadURLItems()
+	if readFileErr != nil {
+		return nil, readFileErr
+	}
+
+	for _, item := range urls {
+		if item.OriginalURL == "" {
+			return nil, errors.New("url is required")
+		}
+
+		if _, err := url.ParseRequestURI(item.OriginalURL); err != nil {
+			return nil, err
+		}
+
+		shortURL, isExists := (*urlItems)[item.OriginalURL]
+
+		if !isExists {
+			shortURL = hash.Generator(common.DefaultHashLength)
+			(*urlItems)[item.OriginalURL] = shortURL
+		}
+
+		u, _ := url.Parse(*config.BaseURL)
+		relative, _ := url.Parse(shortURL)
+
+		output = append(output, OutputManyUrlsItem{CorrelationID: item.CorrelationID, ShortURL: u.ResolveReference(relative).String()})
+	}
+
+	if fsError := fs.WriteURLItem(*urlItems); fsError != nil {
+		return nil, fsError
+	}
+
+	return output, nil
 }
 
 func (fs *FileStorage) WriteURLItem(urlMap FileData) error {

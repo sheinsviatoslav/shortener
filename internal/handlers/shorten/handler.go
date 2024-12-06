@@ -3,8 +3,8 @@ package shorten
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
-	"github.com/sheinsviatoslav/shortener/internal/handlers/createurl"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 	"net/http"
@@ -62,7 +62,7 @@ func (h *Handler) Handle(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if !isExists {
-		shortURL = hash.Generator(createurl.DefaultHashLength)
+		shortURL = hash.Generator(common.DefaultHashLength)
 		if err := h.storage.AddNewURL(originalURL, shortURL); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

@@ -1,16 +1,13 @@
 package createurl
 
 import (
+	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 	"io"
 	"net/http"
 	"net/url"
-)
-
-const (
-	DefaultHashLength = 8
 )
 
 type Handler struct {
@@ -48,7 +45,7 @@ func (h *Handler) Handle(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if !isExists {
-		shortURL = hash.Generator(DefaultHashLength)
+		shortURL = hash.Generator(common.DefaultHashLength)
 		if err := h.storage.AddNewURL(originalURL, shortURL); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

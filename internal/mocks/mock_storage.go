@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	storage "github.com/sheinsviatoslav/shortener/internal/storage"
 )
 
 // MockStorage is a mock of Storage interface.
@@ -31,6 +32,21 @@ func NewMockStorage(ctrl *gomock.Controller) *MockStorage {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 	return m.recorder
+}
+
+// AddManyUrls mocks base method.
+func (m *MockStorage) AddManyUrls(arg0 storage.InputManyUrls) (storage.OutputManyUrls, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddManyUrls", arg0)
+	ret0, _ := ret[0].(storage.OutputManyUrls)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddManyUrls indicates an expected call of AddManyUrls.
+func (mr *MockStorageMockRecorder) AddManyUrls(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddManyUrls", reflect.TypeOf((*MockStorage)(nil).AddManyUrls), arg0)
 }
 
 // AddNewURL mocks base method.
