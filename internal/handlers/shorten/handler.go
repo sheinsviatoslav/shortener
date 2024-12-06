@@ -3,8 +3,8 @@ package shorten
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
-	"github.com/sheinsviatoslav/shortener/internal/handlers/createurl"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 	"net/http"
@@ -19,11 +19,21 @@ type RespBody struct {
 	Result string `json:"result"`
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+type Handler struct {
+	storage storage.Storage
+}
+
+func NewHandler(storage storage.Storage) *Handler {
+	return &Handler{
+		storage: storage,
+	}
+}
+
+func (h *Handler) Handle(w http.ResponseWriter, req *http.Request) {
 	var reqBody ReqBody
 	var buf bytes.Buffer
 
-	if _, err := buf.ReadFrom(r.Body); err != nil {
+	if _, err := buf.ReadFrom(req.Body); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -33,34 +43,27 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reqBody.URL == "" {
+	originalURL := reqBody.URL
+
+	if originalURL == "" {
 		http.Error(w, "url is required", http.StatusBadRequest)
 		return
 	}
 
-	if _, err := url.ParseRequestURI(reqBody.URL); err != nil {
+	if _, err := url.ParseRequestURI(originalURL); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	urlMap := storage.URLMap{}
-
-	urlItems, err := storage.ReadURLItems()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	shortURL, isExists, storageErr := h.storage.GetShortURLByOriginalURL(originalURL)
+	if storageErr != nil {
+		http.Error(w, storageErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if urlItems != nil {
-		urlMap = *urlItems
-	}
-
-	shortURL, isOriginalURLExists := urlMap[reqBody.URL]
-
-	if !isOriginalURLExists {
-		shortURL = hash.Generator(createurl.DefaultHashLength)
-		urlMap[reqBody.URL] = shortURL
-		if err := storage.WriteURLItemToFile(urlMap); err != nil {
+	if !isExists {
+		shortURL = hash.Generator(common.DefaultHashLength)
+		if err := h.storage.AddNewURL(originalURL, shortURL); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -79,8 +82,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if isOriginalURLExists {
-		w.WriteHeader(http.StatusOK)
+	if isExists {
+		w.WriteHeader(http.StatusConflict)
 	} else {
 		w.WriteHeader(http.StatusCreated)
 	}
