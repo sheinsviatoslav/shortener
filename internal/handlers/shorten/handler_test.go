@@ -50,7 +50,7 @@ func TestShortenHandler(t *testing.T) {
 				"url": "https://practicum.yandex.ru/",
 			},
 			want: want{
-				code:        200,
+				code:        409,
 				response:    `{"result":"http://localhost:8080/99XGYq4c"}`,
 				contentType: "application/json",
 				getShortURLReturn: getShortURLByOriginalURLReturn{

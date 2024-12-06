@@ -45,7 +45,7 @@ func TestCreateHandler(t *testing.T) {
 			name: "url already exists",
 			url:  "https://practicum.yandex.ru/",
 			want: want{
-				code:        200,
+				code:        409,
 				response:    "http://localhost:8080/99XGYq4c",
 				contentType: "text/plain",
 				getShortURLReturn: getShortURLByOriginalURLReturn{

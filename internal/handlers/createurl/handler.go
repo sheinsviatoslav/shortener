@@ -57,7 +57,7 @@ func (h *Handler) Handle(w http.ResponseWriter, req *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 	if isExists {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusConflict)
 	} else {
 		w.WriteHeader(http.StatusCreated)
 	}
