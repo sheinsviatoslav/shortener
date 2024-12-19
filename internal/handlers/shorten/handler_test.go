@@ -134,7 +134,7 @@ func TestShortenHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			m := storage.NewMemStorage()
-			if err := m.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c"); err != nil {
+			if err := m.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c", ""); err != nil {
 				require.NoError(t, err)
 			}
 			NewHandler(m).Handle(w, request)
@@ -167,7 +167,7 @@ func TestShortenHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			fs := storage.NewFileStorage()
-			if err := fs.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c"); err != nil {
+			if err := fs.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c", ""); err != nil {
 				require.NoError(t, err)
 			}
 			NewHandler(fs).Handle(w, request)
@@ -209,7 +209,7 @@ func TestShortenHandler(t *testing.T) {
 				test.want.getShortURLReturn.isExists,
 				test.want.getShortURLReturn.error,
 			).AnyTimes()
-			s.EXPECT().AddNewURL(test.url, gomock.Any()).Return(nil).AnyTimes()
+			s.EXPECT().AddNewURL(test.url, gomock.Any(), "").Return(nil).AnyTimes()
 
 			NewHandler(s).Handle(w, request)
 

@@ -86,7 +86,7 @@ func TestGetHandler(t *testing.T) {
 			r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 
 			m := storage.NewMemStorage()
-			if err := m.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c"); err != nil {
+			if err := m.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c", ""); err != nil {
 				require.NoError(t, err)
 			}
 			NewHandler(m).Handle(w, r)
@@ -112,7 +112,7 @@ func TestGetHandler(t *testing.T) {
 			r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 
 			fs := storage.NewFileStorage()
-			if err := fs.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c"); err != nil {
+			if err := fs.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c", ""); err != nil {
 				require.NoError(t, err)
 			}
 			NewHandler(fs).Handle(w, r)
