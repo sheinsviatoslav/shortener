@@ -54,7 +54,7 @@ func (fs *FileStorage) GetShortURLByOriginalURL(originalURL string) (string, boo
 	return "", false, nil
 }
 
-func (fs *FileStorage) AddNewURL(originalURL string, shortURL string) error {
+func (fs *FileStorage) AddNewURL(originalURL string, shortURL string, _ string) error {
 	urlItems, err := fs.ReadURLItems()
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (fs *FileStorage) AddNewURL(originalURL string, shortURL string) error {
 	return nil
 }
 
-func (fs *FileStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
+func (fs *FileStorage) AddManyUrls(urls InputManyUrls, _ string) (OutputManyUrls, error) {
 	var output OutputManyUrls
 	urlItems, readFileErr := fs.ReadURLItems()
 	if readFileErr != nil {
@@ -101,6 +101,23 @@ func (fs *FileStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
 
 	if fsError := fs.WriteURLItem(*urlItems); fsError != nil {
 		return nil, fsError
+	}
+
+	return output, nil
+}
+
+func (fs *FileStorage) GetUserUrls(_ string) (UserUrls, error) {
+	output := make(UserUrls, 0)
+	urlItems, err := fs.ReadURLItems()
+	if err != nil {
+		return nil, err
+	}
+
+	for originalURL, shortURL := range *urlItems {
+		u, _ := url.Parse(*config.BaseURL)
+		relative, _ := url.Parse(shortURL)
+
+		output = append(output, UserUrlsItem{OriginalURL: originalURL, ShortURL: u.ResolveReference(relative).String()})
 	}
 
 	return output, nil

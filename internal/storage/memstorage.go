@@ -43,7 +43,7 @@ func (m *MemStorage) GetOriginalURLByShortURL(inputShortURL string) (string, err
 	return "", nil
 }
 
-func (m *MemStorage) AddNewURL(originalURL string, shortURL string) error {
+func (m *MemStorage) AddNewURL(originalURL string, shortURL string, _ string) error {
 	m.m.Lock()
 	defer m.m.Unlock()
 	m.data[originalURL] = shortURL
@@ -51,7 +51,7 @@ func (m *MemStorage) AddNewURL(originalURL string, shortURL string) error {
 	return nil
 }
 
-func (m *MemStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
+func (m *MemStorage) AddManyUrls(urls InputManyUrls, _ string) (OutputManyUrls, error) {
 	m.m.Lock()
 	defer m.m.Unlock()
 	var output OutputManyUrls
@@ -76,6 +76,20 @@ func (m *MemStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
 		relative, _ := url.Parse(shortURL)
 
 		output = append(output, OutputManyUrlsItem{CorrelationID: item.CorrelationID, ShortURL: u.ResolveReference(relative).String()})
+	}
+
+	return output, nil
+}
+
+func (m *MemStorage) GetUserUrls(_ string) (UserUrls, error) {
+	m.m.Lock()
+	defer m.m.Unlock()
+
+	output := make(UserUrls, 0)
+	for originalURL, shortURL := range m.data {
+		u, _ := url.Parse(*config.BaseURL)
+		relative, _ := url.Parse(shortURL)
+		output = append(output, UserUrlsItem{OriginalURL: originalURL, ShortURL: u.ResolveReference(relative).String()})
 	}
 
 	return output, nil
