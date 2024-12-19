@@ -21,8 +21,8 @@ func NewHandler(storage storage.Storage) *Handler {
 	}
 }
 
-func (h *Handler) Handle(w http.ResponseWriter, req *http.Request) {
-	bodyBytes, err := io.ReadAll(req.Body)
+func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

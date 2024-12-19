@@ -30,11 +30,11 @@ func NewHandler(storage storage.Storage) *Handler {
 	}
 }
 
-func (h *Handler) Handle(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	var reqBody ReqBody
 	var buf bytes.Buffer
 
-	if _, err := buf.ReadFrom(req.Body); err != nil {
+	if _, err := buf.ReadFrom(r.Body); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

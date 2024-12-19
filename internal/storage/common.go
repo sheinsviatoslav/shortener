@@ -20,9 +20,10 @@ type UserUrlsItem struct {
 type UserUrls []UserUrlsItem
 
 type Storage interface {
-	GetOriginalURLByShortURL(string) (string, error)
+	GetOriginalURLByShortURL(string) (string, bool, error)
 	GetShortURLByOriginalURL(string) (string, bool, error)
 	AddNewURL(string, string, string) error
 	AddManyUrls(InputManyUrls, string) (OutputManyUrls, error)
 	GetUserUrls(string) (UserUrls, error)
+	DeleteUserUrls([]string, string) error
 }

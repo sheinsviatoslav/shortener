@@ -63,13 +63,28 @@ func (mr *MockStorageMockRecorder) AddNewURL(arg0, arg1, arg2 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNewURL", reflect.TypeOf((*MockStorage)(nil).AddNewURL), arg0, arg1, arg2)
 }
 
+// DeleteUserUrls mocks base method.
+func (m *MockStorage) DeleteUserUrls(arg0 []string, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUserUrls", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteUserUrls indicates an expected call of DeleteUserUrls.
+func (mr *MockStorageMockRecorder) DeleteUserUrls(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserUrls", reflect.TypeOf((*MockStorage)(nil).DeleteUserUrls), arg0, arg1)
+}
+
 // GetOriginalURLByShortURL mocks base method.
-func (m *MockStorage) GetOriginalURLByShortURL(arg0 string) (string, error) {
+func (m *MockStorage) GetOriginalURLByShortURL(arg0 string) (string, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOriginalURLByShortURL", arg0)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetOriginalURLByShortURL indicates an expected call of GetOriginalURLByShortURL.

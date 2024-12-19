@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"slices"
 )
 
 type FileData map[string]string
@@ -26,19 +27,19 @@ func NewFileStorage() *FileStorage {
 	}
 }
 
-func (fs *FileStorage) GetOriginalURLByShortURL(inputShortURL string) (string, error) {
+func (fs *FileStorage) GetOriginalURLByShortURL(inputShortURL string) (string, bool, error) {
 	urlItems, err := fs.ReadURLItems()
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	for originalURL, shortURL := range *urlItems {
 		if shortURL == inputShortURL {
-			return originalURL, nil
+			return originalURL, false, nil
 		}
 	}
 
-	return "", nil
+	return "", false, nil
 }
 
 func (fs *FileStorage) GetShortURLByOriginalURL(originalURL string) (string, bool, error) {
@@ -121,6 +122,25 @@ func (fs *FileStorage) GetUserUrls(_ string) (UserUrls, error) {
 	}
 
 	return output, nil
+}
+
+func (fs *FileStorage) DeleteUserUrls(shortUrls []string, _ string) error {
+	urlItems, err := fs.ReadURLItems()
+	if err != nil {
+		return nil
+	}
+
+	for originalURL, shortURL := range *urlItems {
+		if slices.Contains(shortUrls, shortURL) {
+			delete(*urlItems, originalURL)
+		}
+	}
+
+	if fsError := fs.WriteURLItem(*urlItems); fsError != nil {
+		return fsError
+	}
+
+	return nil
 }
 
 func (fs *FileStorage) WriteURLItem(urlMap FileData) error {

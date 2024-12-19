@@ -28,10 +28,11 @@ func (p *PgStorage) Connect() error {
 
 	_, err = p.DB.Exec(
 		"CREATE TABLE IF NOT EXISTS urls (" +
-			"id uuid PRIMARY KEY DEFAULT GEN_RANDOM_UUID(), " +
+			"id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(), " +
 			"original_url TEXT NOT NULL," +
 			"short_url TEXT NOT NULL," +
-			"user_id uuid NOT NULL)",
+			"user_id UUID NOT NULL," +
+			"is_deleted BOOLEAN DEFAULT FALSE)",
 	)
 	if err != nil {
 		return err
@@ -40,14 +41,21 @@ func (p *PgStorage) Connect() error {
 	return nil
 }
 
-func (p *PgStorage) GetOriginalURLByShortURL(shortURL string) (string, error) {
-	row := p.DB.QueryRow(`SELECT original_url FROM urls WHERE short_url = $1`, shortURL)
-	var originalURL string
-	if err := row.Scan(&originalURL); err != nil {
-		return "", err
+func (p *PgStorage) GetOriginalURLByShortURL(shortURL string) (string, bool, error) {
+	row := p.DB.QueryRow(`SELECT original_url, is_deleted FROM urls WHERE short_url = $1`, shortURL)
+	var data struct {
+		OriginalURL string `json:"original_url"`
+		IsDeleted   bool   `json:"is_deleted"`
+	}
+	if err := row.Scan(&data.OriginalURL, &data.IsDeleted); err != nil {
+		return "", false, err
 	}
 
-	return originalURL, nil
+	if data.IsDeleted {
+		return "", true, nil
+	}
+
+	return data.OriginalURL, false, nil
 }
 
 func (p *PgStorage) GetShortURLByOriginalURL(originalURL string) (string, bool, error) {
@@ -147,4 +155,23 @@ func (p *PgStorage) GetUserUrls(userID string) (UserUrls, error) {
 	}
 
 	return output, nil
+}
+
+func (p *PgStorage) DeleteUserUrls(shortUrls []string, userID string) error {
+	tx, err := p.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	for _, shortURL := range shortUrls {
+
+		query := `UPDATE urls SET is_deleted = true WHERE short_url = $1 AND user_id = $2`
+		if _, err = tx.Exec(query, shortURL, userID); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	tx.Commit()
+	return nil
 }
