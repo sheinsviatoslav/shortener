@@ -15,8 +15,8 @@ func NewHandler(db *sql.DB) *Handler {
 	}
 }
 
-func (h *Handler) Handle(w http.ResponseWriter, req *http.Request) {
-	if err := h.db.PingContext(req.Context()); err != nil {
+func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
+	if err := h.db.PingContext(r.Context()); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

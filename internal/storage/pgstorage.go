@@ -28,9 +28,12 @@ func (p *PgStorage) Connect() error {
 
 	_, err = p.DB.Exec(
 		"CREATE TABLE IF NOT EXISTS urls (" +
-			"id uuid PRIMARY KEY DEFAULT GEN_RANDOM_UUID(), " +
-			"original_url TEXT NOT NULL UNIQUE, " +
-			"short_url TEXT NOT NULL UNIQUE)")
+			"id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(), " +
+			"original_url TEXT NOT NULL," +
+			"short_url TEXT NOT NULL," +
+			"user_id UUID NOT NULL," +
+			"is_deleted BOOLEAN DEFAULT FALSE)",
+	)
 	if err != nil {
 		return err
 	}
@@ -38,18 +41,26 @@ func (p *PgStorage) Connect() error {
 	return nil
 }
 
-func (p *PgStorage) GetOriginalURLByShortURL(shortURL string) (string, error) {
-	row := p.DB.QueryRow(`SELECT original_url FROM urls WHERE short_url = $1`, shortURL)
-	var originalURL string
-	if err := row.Scan(&originalURL); err != nil {
-		return "", err
+func (p *PgStorage) GetOriginalURLByShortURL(shortURL string) (string, bool, error) {
+	row := p.DB.QueryRow(`SELECT original_url, is_deleted FROM urls WHERE short_url = $1`, shortURL)
+	var data struct {
+		OriginalURL string `json:"original_url"`
+		IsDeleted   bool   `json:"is_deleted"`
+	}
+	if err := row.Scan(&data.OriginalURL, &data.IsDeleted); err != nil {
+		return "", false, err
 	}
 
-	return originalURL, nil
+	if data.IsDeleted {
+		return "", true, nil
+	}
+
+	return data.OriginalURL, false, nil
 }
 
 func (p *PgStorage) GetShortURLByOriginalURL(originalURL string) (string, bool, error) {
-	row := p.DB.QueryRow(`SELECT short_url FROM urls WHERE original_url = $1`, originalURL)
+	query := `SELECT short_url FROM urls WHERE original_url = $1`
+	row := p.DB.QueryRow(query, originalURL)
 	var shortURL string
 
 	if err := row.Scan(&shortURL); err != nil {
@@ -63,15 +74,16 @@ func (p *PgStorage) GetShortURLByOriginalURL(originalURL string) (string, bool, 
 	return shortURL, true, nil
 }
 
-func (p *PgStorage) AddNewURL(originalURL string, shortURL string) error {
-	if _, err := p.DB.Exec(`INSERT INTO urls (original_url, short_url) VALUES($1, $2)`, originalURL, shortURL); err != nil {
+func (p *PgStorage) AddNewURL(originalURL string, shortURL string, userID string) error {
+	query := `INSERT INTO urls (original_url, short_url, user_id) VALUES($1, $2, $3)`
+	if _, err := p.DB.Exec(query, originalURL, shortURL, userID); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (p *PgStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
+func (p *PgStorage) AddManyUrls(urls InputManyUrls, userID string) (OutputManyUrls, error) {
 	var output OutputManyUrls
 	tx, err := p.DB.Begin()
 	if err != nil {
@@ -97,7 +109,8 @@ func (p *PgStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
 
 		if !isExists {
 			shortURL = hash.Generator(common.DefaultHashLength)
-			if _, err = tx.Exec(`INSERT INTO urls (original_url, short_url) VALUES($1, $2)`, item.OriginalURL, shortURL); err != nil {
+			query := `INSERT INTO urls (original_url, short_url, user_id) VALUES($1, $2, $3)`
+			if _, err = tx.Exec(query, item.OriginalURL, shortURL, userID); err != nil {
 				tx.Rollback()
 				return nil, err
 			}
@@ -111,4 +124,54 @@ func (p *PgStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
 
 	tx.Commit()
 	return output, nil
+}
+
+func (p *PgStorage) GetUserUrls(userID string) (UserUrls, error) {
+	query := `SELECT original_url, short_url FROM urls WHERE user_id = $1`
+	rows, err := p.DB.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	output := make(UserUrls, 0)
+
+	for rows.Next() {
+		var urlItem UserUrlsItem
+		err = rows.Scan(&urlItem.OriginalURL, &urlItem.ShortURL)
+		if err != nil {
+			return nil, err
+		}
+
+		u, _ := url.Parse(*config.BaseURL)
+		relative, _ := url.Parse(urlItem.ShortURL)
+
+		output = append(output, UserUrlsItem{OriginalURL: urlItem.OriginalURL, ShortURL: u.ResolveReference(relative).String()})
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return output, nil
+}
+
+func (p *PgStorage) DeleteUserUrls(shortUrls []string, userID string) error {
+	tx, err := p.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	for _, shortURL := range shortUrls {
+
+		query := `UPDATE urls SET is_deleted = true WHERE short_url = $1 AND user_id = $2`
+		if _, err = tx.Exec(query, shortURL, userID); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	tx.Commit()
+	return nil
 }

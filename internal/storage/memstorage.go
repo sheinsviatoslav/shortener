@@ -6,6 +6,7 @@ import (
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 	"net/url"
+	"slices"
 	"sync"
 )
 
@@ -30,20 +31,20 @@ func (m *MemStorage) GetShortURLByOriginalURL(originalURL string) (string, bool,
 	return "", false, nil
 }
 
-func (m *MemStorage) GetOriginalURLByShortURL(inputShortURL string) (string, error) {
+func (m *MemStorage) GetOriginalURLByShortURL(inputShortURL string) (string, bool, error) {
 	m.m.Lock()
 	defer m.m.Unlock()
 
 	for originalURL, shortURL := range m.data {
 		if shortURL == inputShortURL {
-			return originalURL, nil
+			return originalURL, false, nil
 		}
 	}
 
-	return "", nil
+	return "", false, nil
 }
 
-func (m *MemStorage) AddNewURL(originalURL string, shortURL string) error {
+func (m *MemStorage) AddNewURL(originalURL string, shortURL string, _ string) error {
 	m.m.Lock()
 	defer m.m.Unlock()
 	m.data[originalURL] = shortURL
@@ -51,7 +52,7 @@ func (m *MemStorage) AddNewURL(originalURL string, shortURL string) error {
 	return nil
 }
 
-func (m *MemStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
+func (m *MemStorage) AddManyUrls(urls InputManyUrls, _ string) (OutputManyUrls, error) {
 	m.m.Lock()
 	defer m.m.Unlock()
 	var output OutputManyUrls
@@ -79,4 +80,31 @@ func (m *MemStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
 	}
 
 	return output, nil
+}
+
+func (m *MemStorage) GetUserUrls(_ string) (UserUrls, error) {
+	m.m.Lock()
+	defer m.m.Unlock()
+
+	output := make(UserUrls, 0)
+	for originalURL, shortURL := range m.data {
+		u, _ := url.Parse(*config.BaseURL)
+		relative, _ := url.Parse(shortURL)
+		output = append(output, UserUrlsItem{OriginalURL: originalURL, ShortURL: u.ResolveReference(relative).String()})
+	}
+
+	return output, nil
+}
+
+func (m *MemStorage) DeleteUserUrls(shortUrls []string, _ string) error {
+	m.m.Lock()
+	defer m.m.Unlock()
+
+	for originalURL, shortURL := range m.data {
+		if slices.Contains(shortUrls, shortURL) {
+			delete(m.data, originalURL)
+		}
+	}
+
+	return nil
 }
