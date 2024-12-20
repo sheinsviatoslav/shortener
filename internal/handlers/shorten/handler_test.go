@@ -130,14 +130,14 @@ func TestShortenHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name+" memstorage", func(t *testing.T) {
 			body, _ := json.Marshal(test.body)
-			request := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
+			r := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
 			w := httptest.NewRecorder()
 
 			m := storage.NewMemStorage()
-			if err := m.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c"); err != nil {
+			if err := m.AddNewURL(r.Context(), "https://practicum.yandex.ru/", "99XGYq4c", ""); err != nil {
 				require.NoError(t, err)
 			}
-			NewHandler(m).Handle(w, request)
+			NewHandler(m).Handle(w, r)
 
 			res := w.Result()
 			assert.Equal(t, test.want.code, res.StatusCode)
@@ -163,14 +163,14 @@ func TestShortenHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name+" filestorage", func(t *testing.T) {
 			body, _ := json.Marshal(test.body)
-			request := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
+			r := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
 			w := httptest.NewRecorder()
 
 			fs := storage.NewFileStorage()
-			if err := fs.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c"); err != nil {
+			if err := fs.AddNewURL(r.Context(), "https://practicum.yandex.ru/", "99XGYq4c", ""); err != nil {
 				require.NoError(t, err)
 			}
-			NewHandler(fs).Handle(w, request)
+			NewHandler(fs).Handle(w, r)
 
 			res := w.Result()
 			assert.Equal(t, test.want.code, res.StatusCode)
@@ -201,17 +201,17 @@ func TestShortenHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name+" pgstorage", func(t *testing.T) {
 			body, _ := json.Marshal(test.body)
-			request := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
+			r := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
 			w := httptest.NewRecorder()
 
-			s.EXPECT().GetShortURLByOriginalURL(test.url).Return(
+			s.EXPECT().GetShortURLByOriginalURL(r.Context(), test.url).Return(
 				test.want.getShortURLReturn.shortURL,
 				test.want.getShortURLReturn.isExists,
 				test.want.getShortURLReturn.error,
 			).AnyTimes()
-			s.EXPECT().AddNewURL(test.url, gomock.Any()).Return(nil).AnyTimes()
+			s.EXPECT().AddNewURL(r.Context(), test.url, gomock.Any(), "").Return(nil).AnyTimes()
 
-			NewHandler(s).Handle(w, request)
+			NewHandler(s).Handle(w, r)
 
 			res := w.Result()
 			assert.Equal(t, test.want.code, res.StatusCode)

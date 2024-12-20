@@ -4,6 +4,7 @@ import (
 	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
+	"github.com/sheinsviatoslav/shortener/internal/utils"
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 	"io"
 	"net/http"
@@ -20,8 +21,8 @@ func NewHandler(storage storage.Storage) *Handler {
 	}
 }
 
-func (h *Handler) Handle(w http.ResponseWriter, req *http.Request) {
-	bodyBytes, err := io.ReadAll(req.Body)
+func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -38,7 +39,7 @@ func (h *Handler) Handle(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortURL, isExists, storageErr := h.storage.GetShortURLByOriginalURL(originalURL)
+	shortURL, isExists, storageErr := h.storage.GetShortURLByOriginalURL(r.Context(), originalURL)
 	if storageErr != nil {
 		http.Error(w, storageErr.Error(), http.StatusInternalServerError)
 		return
@@ -46,7 +47,7 @@ func (h *Handler) Handle(w http.ResponseWriter, req *http.Request) {
 
 	if !isExists {
 		shortURL = hash.Generator(common.DefaultHashLength)
-		if err := h.storage.AddNewURL(originalURL, shortURL); err != nil {
+		if err := h.storage.AddNewURL(r.Context(), originalURL, shortURL, utils.GetUserID(r)); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

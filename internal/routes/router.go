@@ -5,7 +5,9 @@ import (
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/createurl"
+	"github.com/sheinsviatoslav/shortener/internal/handlers/deleteuserurls"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/geturl"
+	"github.com/sheinsviatoslav/shortener/internal/handlers/getuserurls"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/ping"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/shorten"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/shortenbatch"
@@ -19,6 +21,7 @@ func MainRouter() chi.Router {
 	r := chi.NewRouter()
 	r.Use(middleware.WithLogger)
 	r.Use(middleware.GzipHandle)
+	r.Use(middleware.WithAuth)
 	r.Use(chiMiddleware.Timeout(1000 * time.Millisecond))
 
 	var st storage.Storage
@@ -40,6 +43,8 @@ func MainRouter() chi.Router {
 	r.Post("/", createurl.NewHandler(st).Handle)
 	r.Post("/api/shorten", shorten.NewHandler(st).Handle)
 	r.Post("/api/shorten/batch", shortenbatch.NewHandler(st).Handle)
+	r.Get("/api/user/urls", getuserurls.NewHandler(st).Handle)
+	r.Delete("/api/user/urls", deleteuserurls.NewHandler(st).Handle)
 
 	return r
 }
