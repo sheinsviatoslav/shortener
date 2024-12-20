@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"errors"
 	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
@@ -21,7 +22,7 @@ func NewMemStorage() *MemStorage {
 	}
 }
 
-func (m *MemStorage) GetShortURLByOriginalURL(originalURL string) (string, bool, error) {
+func (m *MemStorage) GetShortURLByOriginalURL(_ context.Context, originalURL string) (string, bool, error) {
 	m.m.Lock()
 	defer m.m.Unlock()
 	if shortURL, ok := m.data[originalURL]; ok {
@@ -31,7 +32,7 @@ func (m *MemStorage) GetShortURLByOriginalURL(originalURL string) (string, bool,
 	return "", false, nil
 }
 
-func (m *MemStorage) GetOriginalURLByShortURL(inputShortURL string) (string, bool, error) {
+func (m *MemStorage) GetOriginalURLByShortURL(_ context.Context, inputShortURL string) (string, bool, error) {
 	m.m.Lock()
 	defer m.m.Unlock()
 
@@ -44,7 +45,7 @@ func (m *MemStorage) GetOriginalURLByShortURL(inputShortURL string) (string, boo
 	return "", false, nil
 }
 
-func (m *MemStorage) AddNewURL(originalURL string, shortURL string, _ string) error {
+func (m *MemStorage) AddNewURL(_ context.Context, originalURL string, shortURL string, _ string) error {
 	m.m.Lock()
 	defer m.m.Unlock()
 	m.data[originalURL] = shortURL
@@ -52,7 +53,7 @@ func (m *MemStorage) AddNewURL(originalURL string, shortURL string, _ string) er
 	return nil
 }
 
-func (m *MemStorage) AddManyUrls(urls InputManyUrls, _ string) (OutputManyUrls, error) {
+func (m *MemStorage) AddManyUrls(_ context.Context, urls InputManyUrls, _ string) (OutputManyUrls, error) {
 	m.m.Lock()
 	defer m.m.Unlock()
 	var output OutputManyUrls
@@ -82,7 +83,7 @@ func (m *MemStorage) AddManyUrls(urls InputManyUrls, _ string) (OutputManyUrls, 
 	return output, nil
 }
 
-func (m *MemStorage) GetUserUrls(_ string) (UserUrls, error) {
+func (m *MemStorage) GetUserUrls(_ context.Context, _ string) (UserUrls, error) {
 	m.m.Lock()
 	defer m.m.Unlock()
 
@@ -96,7 +97,7 @@ func (m *MemStorage) GetUserUrls(_ string) (UserUrls, error) {
 	return output, nil
 }
 
-func (m *MemStorage) DeleteUserUrls(shortUrls []string, _ string) error {
+func (m *MemStorage) DeleteUserUrls(_ context.Context, shortUrls []string, _ string) error {
 	m.m.Lock()
 	defer m.m.Unlock()
 

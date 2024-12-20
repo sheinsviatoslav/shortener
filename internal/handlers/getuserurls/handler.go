@@ -32,7 +32,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	urls, err := h.storage.GetUserUrls(value)
+	urls, err := h.storage.GetUserUrls(r.Context(), value)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

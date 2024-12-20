@@ -12,6 +12,8 @@ import (
 	"strings"
 )
 
+var ErrInvalidCookieValue = errors.New("invalid cookie value")
+
 func Write(w http.ResponseWriter, cookie http.Cookie) error {
 	cookie.Value = base64.URLEncoding.EncodeToString([]byte(cookie.Value))
 
@@ -32,7 +34,7 @@ func Read(r *http.Request, name string) (string, error) {
 
 	value, err := base64.URLEncoding.DecodeString(cookie.Value)
 	if err != nil {
-		return "", errors.New("invalid cookie value")
+		return "", ErrInvalidCookieValue
 	}
 
 	return string(value), nil
@@ -81,7 +83,7 @@ func ReadEncryptedCookie(r *http.Request, name string, secretKey []byte) (string
 	nonceSize := aesGCM.NonceSize()
 
 	if len(encryptedValue) < nonceSize {
-		return "", errors.New("invalid cookie value")
+		return "", ErrInvalidCookieValue
 	}
 
 	nonce := encryptedValue[:nonceSize]
@@ -89,16 +91,16 @@ func ReadEncryptedCookie(r *http.Request, name string, secretKey []byte) (string
 
 	plaintext, err := aesGCM.Open(nil, []byte(nonce), []byte(ciphertext), nil)
 	if err != nil {
-		return "", errors.New("invalid cookie value")
+		return "", ErrInvalidCookieValue
 	}
 
 	expectedName, value, ok := strings.Cut(string(plaintext), ":")
 	if !ok {
-		return "", errors.New("invalid cookie value")
+		return "", ErrInvalidCookieValue
 	}
 
 	if expectedName != name {
-		return "", errors.New("invalid cookie value")
+		return "", ErrInvalidCookieValue
 	}
 
 	return value, nil

@@ -3,8 +3,8 @@ package shortenbatch
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/sheinsviatoslav/shortener/internal/middleware"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
+	"github.com/sheinsviatoslav/shortener/internal/utils"
 	"net/http"
 )
 
@@ -36,7 +36,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "empty request body", http.StatusBadRequest)
 		return
 	}
-	respBody, err := h.storage.AddManyUrls(reqBody, middleware.CurrentUserID)
+	respBody, err := h.storage.AddManyUrls(r.Context(), reqBody, utils.GetUserID(r))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

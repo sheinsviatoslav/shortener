@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
-	"github.com/sheinsviatoslav/shortener/internal/middleware"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
+	"github.com/sheinsviatoslav/shortener/internal/utils"
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 	"net/http"
 	"net/url"
@@ -56,7 +56,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortURL, isExists, storageErr := h.storage.GetShortURLByOriginalURL(originalURL)
+	shortURL, isExists, storageErr := h.storage.GetShortURLByOriginalURL(r.Context(), originalURL)
 	if storageErr != nil {
 		http.Error(w, storageErr.Error(), http.StatusInternalServerError)
 		return
@@ -64,7 +64,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	if !isExists {
 		shortURL = hash.Generator(common.DefaultHashLength)
-		if err := h.storage.AddNewURL(originalURL, shortURL, middleware.CurrentUserID); err != nil {
+		if err := h.storage.AddNewURL(r.Context(), originalURL, shortURL, utils.GetUserID(r)); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

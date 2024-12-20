@@ -8,7 +8,6 @@ import (
 	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"net/http"
-	"sync"
 )
 
 type ReqBody []string
@@ -49,14 +48,11 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var m sync.Mutex
 	go func(urls ReqBody, id string) {
-		m.Lock()
-		_ = h.storage.DeleteUserUrls(reqBody, id)
-		m.Unlock()
+		_ = h.storage.DeleteUserUrls(r.Context(), reqBody, id)
 	}(reqBody, userID)
 
-	if err = h.storage.DeleteUserUrls(reqBody, userID); err != nil {
+	if err = h.storage.DeleteUserUrls(r.Context(), reqBody, userID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
