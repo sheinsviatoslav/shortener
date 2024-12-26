@@ -25,6 +25,7 @@ func TestGetHandler(t *testing.T) {
 
 	type getOriginalURLByShortURLReturn struct {
 		originalURL string
+		isDeleted   bool
 		error       error
 	}
 
@@ -48,6 +49,7 @@ func TestGetHandler(t *testing.T) {
 				contentType: "text/plain",
 				getOriginalURLReturn: getOriginalURLByShortURLReturn{
 					originalURL: "https://practicum.yandex.ru/",
+					isDeleted:   false,
 					error:       nil,
 				},
 			},
@@ -61,6 +63,7 @@ func TestGetHandler(t *testing.T) {
 				contentType: "text/plain; charset=utf-8",
 				getOriginalURLReturn: getOriginalURLByShortURLReturn{
 					originalURL: "",
+					isDeleted:   false,
 					error:       errors.New("invalid URL path"),
 				},
 			},
@@ -86,7 +89,7 @@ func TestGetHandler(t *testing.T) {
 			r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 
 			m := storage.NewMemStorage()
-			if err := m.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c"); err != nil {
+			if err := m.AddNewURL(r.Context(), "https://practicum.yandex.ru/", "99XGYq4c", ""); err != nil {
 				require.NoError(t, err)
 			}
 			NewHandler(m).Handle(w, r)
@@ -112,7 +115,7 @@ func TestGetHandler(t *testing.T) {
 			r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 
 			fs := storage.NewFileStorage()
-			if err := fs.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c"); err != nil {
+			if err := fs.AddNewURL(r.Context(), "https://practicum.yandex.ru/", "99XGYq4c", ""); err != nil {
 				require.NoError(t, err)
 			}
 			NewHandler(fs).Handle(w, r)
@@ -142,8 +145,9 @@ func TestGetHandler(t *testing.T) {
 
 			r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 
-			s.EXPECT().GetOriginalURLByShortURL(test.shortURL).Return(
+			s.EXPECT().GetOriginalURLByShortURL(r.Context(), test.shortURL).Return(
 				test.want.getOriginalURLReturn.originalURL,
+				test.want.getOriginalURLReturn.isDeleted,
 				test.want.getOriginalURLReturn.error,
 			).AnyTimes()
 			NewHandler(s).Handle(w, r)

@@ -95,7 +95,7 @@ func TestCreateHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			m := storage.NewMemStorage()
-			if err := m.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c"); err != nil {
+			if err := m.AddNewURL(request.Context(), "https://practicum.yandex.ru/", "99XGYq4c", ""); err != nil {
 				require.NoError(t, err)
 			}
 			NewHandler(m).Handle(w, request)
@@ -126,7 +126,7 @@ func TestCreateHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			fs := storage.NewFileStorage()
-			if err := fs.AddNewURL("https://practicum.yandex.ru/", "99XGYq4c"); err != nil {
+			if err := fs.AddNewURL(request.Context(), "https://practicum.yandex.ru/", "99XGYq4c", ""); err != nil {
 				require.NoError(t, err)
 			}
 			NewHandler(fs).Handle(w, request)
@@ -159,17 +159,17 @@ func TestCreateHandler(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name+" pgstorage", func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(test.url))
+			r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(test.url))
 			w := httptest.NewRecorder()
 
-			s.EXPECT().GetShortURLByOriginalURL(test.url).Return(
+			s.EXPECT().GetShortURLByOriginalURL(r.Context(), test.url).Return(
 				test.want.getShortURLReturn.shortURL,
 				test.want.getShortURLReturn.isExists,
 				test.want.getShortURLReturn.error,
 			).AnyTimes()
-			s.EXPECT().AddNewURL(test.url, gomock.Any()).Return(nil).AnyTimes()
+			s.EXPECT().AddNewURL(r.Context(), test.url, gomock.Any(), "").Return(nil).AnyTimes()
 
-			NewHandler(s).Handle(w, request)
+			NewHandler(s).Handle(w, r)
 
 			res := w.Result()
 			assert.Equal(t, test.want.code, res.StatusCode)

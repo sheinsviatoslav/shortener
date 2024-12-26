@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/sheinsviatoslav/shortener/internal/common"
@@ -10,6 +11,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"slices"
 )
 
 type FileData map[string]string
@@ -26,22 +28,22 @@ func NewFileStorage() *FileStorage {
 	}
 }
 
-func (fs *FileStorage) GetOriginalURLByShortURL(inputShortURL string) (string, error) {
+func (fs *FileStorage) GetOriginalURLByShortURL(_ context.Context, inputShortURL string) (string, bool, error) {
 	urlItems, err := fs.ReadURLItems()
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	for originalURL, shortURL := range *urlItems {
 		if shortURL == inputShortURL {
-			return originalURL, nil
+			return originalURL, false, nil
 		}
 	}
 
-	return "", nil
+	return "", false, nil
 }
 
-func (fs *FileStorage) GetShortURLByOriginalURL(originalURL string) (string, bool, error) {
+func (fs *FileStorage) GetShortURLByOriginalURL(_ context.Context, originalURL string) (string, bool, error) {
 	urlItems, err := fs.ReadURLItems()
 	if err != nil {
 		return "", false, err
@@ -54,7 +56,7 @@ func (fs *FileStorage) GetShortURLByOriginalURL(originalURL string) (string, boo
 	return "", false, nil
 }
 
-func (fs *FileStorage) AddNewURL(originalURL string, shortURL string) error {
+func (fs *FileStorage) AddNewURL(_ context.Context, originalURL string, shortURL string, _ string) error {
 	urlItems, err := fs.ReadURLItems()
 	if err != nil {
 		return err
@@ -70,7 +72,7 @@ func (fs *FileStorage) AddNewURL(originalURL string, shortURL string) error {
 	return nil
 }
 
-func (fs *FileStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
+func (fs *FileStorage) AddManyUrls(_ context.Context, urls InputManyUrls, _ string) (OutputManyUrls, error) {
 	var output OutputManyUrls
 	urlItems, readFileErr := fs.ReadURLItems()
 	if readFileErr != nil {
@@ -104,6 +106,42 @@ func (fs *FileStorage) AddManyUrls(urls InputManyUrls) (OutputManyUrls, error) {
 	}
 
 	return output, nil
+}
+
+func (fs *FileStorage) GetUserUrls(_ context.Context, _ string) (UserUrls, error) {
+	output := make(UserUrls, 0)
+	urlItems, err := fs.ReadURLItems()
+	if err != nil {
+		return nil, err
+	}
+
+	for originalURL, shortURL := range *urlItems {
+		u, _ := url.Parse(*config.BaseURL)
+		relative, _ := url.Parse(shortURL)
+
+		output = append(output, UserUrlsItem{OriginalURL: originalURL, ShortURL: u.ResolveReference(relative).String()})
+	}
+
+	return output, nil
+}
+
+func (fs *FileStorage) DeleteUserUrls(_ context.Context, shortUrls []string, _ string) error {
+	urlItems, err := fs.ReadURLItems()
+	if err != nil {
+		return nil
+	}
+
+	for originalURL, shortURL := range *urlItems {
+		if slices.Contains(shortUrls, shortURL) {
+			delete(*urlItems, originalURL)
+		}
+	}
+
+	if fsError := fs.WriteURLItem(*urlItems); fsError != nil {
+		return fsError
+	}
+
+	return nil
 }
 
 func (fs *FileStorage) WriteURLItem(urlMap FileData) error {

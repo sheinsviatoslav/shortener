@@ -16,16 +16,21 @@ func NewHandler(storage storage.Storage) *Handler {
 	}
 }
 
-func (h *Handler) Handle(w http.ResponseWriter, req *http.Request) {
-	shortURL := chi.URLParam(req, "shortURL")
+func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
+	shortURL := chi.URLParam(r, "shortURL")
 	if shortURL == "" {
 		http.Error(w, "empty path", http.StatusBadRequest)
 		return
 	}
 
-	originalURL, err := h.storage.GetOriginalURLByShortURL(shortURL)
+	originalURL, isDeleted, err := h.storage.GetOriginalURLByShortURL(r.Context(), shortURL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if isDeleted {
+		http.Error(w, "url is already deleted", http.StatusGone)
 		return
 	}
 

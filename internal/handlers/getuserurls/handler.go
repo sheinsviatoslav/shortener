@@ -1,10 +1,11 @@
-package shortenbatch
+package getuserurls
 
 import (
-	"bytes"
+	"encoding/hex"
 	"encoding/json"
+	"github.com/sheinsviatoslav/shortener/internal/auth"
+	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
-	"github.com/sheinsviatoslav/shortener/internal/utils"
 	"net/http"
 )
 
@@ -19,36 +20,35 @@ func NewHandler(storage storage.Storage) *Handler {
 }
 
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
-	var reqBody storage.InputManyUrls
-	var buf bytes.Buffer
-
-	if _, err := buf.ReadFrom(r.Body); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	secretKey, err := hex.DecodeString(common.SecretKey)
+	if err != nil {
+		http.Error(w, "Invalid secret key", http.StatusUnauthorized)
 		return
 	}
 
-	if err := json.Unmarshal(buf.Bytes(), &reqBody); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	value, err := auth.ReadEncryptedCookie(r, "userID", secretKey)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	if len(reqBody) == 0 {
-		http.Error(w, "empty request body", http.StatusBadRequest)
-		return
-	}
-	respBody, err := h.storage.AddManyUrls(r.Context(), reqBody, utils.GetUserID(r))
+	urls, err := h.storage.GetUserUrls(r.Context(), value)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	jsonResp, err := json.Marshal(respBody)
+	jsonResp, err := json.Marshal(urls)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	if len(urls) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
 	if _, err := w.Write(jsonResp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
