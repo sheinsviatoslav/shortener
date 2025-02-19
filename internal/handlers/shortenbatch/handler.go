@@ -36,6 +36,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "empty request body", http.StatusBadRequest)
 		return
 	}
+
 	respBody, err := h.storage.AddManyUrls(r.Context(), reqBody, utils.GetUserID(r))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

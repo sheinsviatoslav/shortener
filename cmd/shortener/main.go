@@ -6,6 +6,7 @@ import (
 	"github.com/sheinsviatoslav/shortener/internal/routes"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 )
 
 func main() {
