@@ -13,8 +13,10 @@ import (
 	"strings"
 )
 
+// ErrInvalidCookieValue is the universal invalid cookie error
 var ErrInvalidCookieValue = errors.New("invalid cookie value")
 
+// Write is the function that encodes cookie value and sets it to response
 func Write(w http.ResponseWriter, cookie http.Cookie) error {
 	cookie.Value = base64.URLEncoding.EncodeToString([]byte(cookie.Value))
 
@@ -27,6 +29,7 @@ func Write(w http.ResponseWriter, cookie http.Cookie) error {
 	return nil
 }
 
+// Read is the function that reads cookie value by name and decodes it
 func Read(r *http.Request, name string) (string, error) {
 	cookie, err := r.Cookie(name)
 	if err != nil {
@@ -41,6 +44,7 @@ func Read(r *http.Request, name string) (string, error) {
 	return string(value), nil
 }
 
+// WriteEncryptedCookie is the function that encrypts cookie using secret key and writes it to response
 func WriteEncryptedCookie(w http.ResponseWriter, cookie http.Cookie, secretKey []byte) error {
 	aesBlock, err := aes.NewCipher(secretKey)
 	if err != nil {
@@ -65,6 +69,7 @@ func WriteEncryptedCookie(w http.ResponseWriter, cookie http.Cookie, secretKey [
 	return Write(w, cookie)
 }
 
+// ReadEncryptedCookie is the function that reads cookie using secret key and decrypts it
 func ReadEncryptedCookie(r *http.Request, name string, secretKey []byte) (string, error) {
 	encryptedValue, err := Read(r, name)
 	if err != nil {

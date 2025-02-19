@@ -8,6 +8,7 @@ import (
 	"github.com/caarlos0/env/v6"
 )
 
+// Config is a config params type
 type Config struct {
 	ServerAddr      string `env:"SERVER_ADDRESS"`
 	BaseURL         string `env:"BASE_URL"`
@@ -15,6 +16,7 @@ type Config struct {
 	DatabaseDSN     string `env:"DATABASE_DSN"`
 }
 
+// App config params
 var (
 	ServerAddr      = flag.String("a", ":8080", "server address")
 	BaseURL         = flag.String("b", "http://localhost:8080/", "base address of shortened URL")
@@ -22,6 +24,7 @@ var (
 	DatabaseDSN     = flag.String("d", "", "database data source name")
 )
 
+// Init is a function that checks if config params are from flags or from environment variables
 func Init() {
 	var cfg Config
 	if err := env.Parse(&cfg); err != nil {

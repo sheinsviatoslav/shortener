@@ -19,6 +19,7 @@ import (
 	"github.com/sheinsviatoslav/shortener/internal/storage"
 )
 
+// MainRouter is the router for handling endpoints
 func MainRouter() chi.Router {
 	r := chi.NewRouter()
 	r.Use(middleware.WithLogger)

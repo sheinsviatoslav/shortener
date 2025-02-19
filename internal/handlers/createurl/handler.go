@@ -13,16 +13,19 @@ import (
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 )
 
+// Handler is a handler type
 type Handler struct {
 	storage storage.Storage
 }
 
+// NewHandler is a handler constructor
 func NewHandler(storage storage.Storage) *Handler {
 	return &Handler{
 		storage: storage,
 	}
 }
 
+// Handle is a main handler method
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {

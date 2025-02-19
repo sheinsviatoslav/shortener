@@ -15,13 +15,16 @@ import (
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 )
 
+// FileData is a type for data stored in file
 type FileData map[string]string
 
+// FileStorage is a storage type
 type FileStorage struct {
 	Producer Producer
 	Consumer Consumer
 }
 
+// NewFileStorage constructs new FileStorage struct
 func NewFileStorage() *FileStorage {
 	return &FileStorage{
 		Producer: Producer{},
@@ -29,6 +32,7 @@ func NewFileStorage() *FileStorage {
 	}
 }
 
+// GetOriginalURLByShortURL returns original url
 func (fs *FileStorage) GetOriginalURLByShortURL(_ context.Context, inputShortURL string) (string, bool, error) {
 	urlItems, err := fs.ReadURLItems()
 	if err != nil {
@@ -44,6 +48,7 @@ func (fs *FileStorage) GetOriginalURLByShortURL(_ context.Context, inputShortURL
 	return "", false, nil
 }
 
+// GetShortURLByOriginalURL returns short url
 func (fs *FileStorage) GetShortURLByOriginalURL(_ context.Context, originalURL string) (string, bool, error) {
 	urlItems, err := fs.ReadURLItems()
 	if err != nil {
@@ -57,6 +62,7 @@ func (fs *FileStorage) GetShortURLByOriginalURL(_ context.Context, originalURL s
 	return "", false, nil
 }
 
+// AddNewURL adds originalURL-shortURL pair into the storage
 func (fs *FileStorage) AddNewURL(_ context.Context, originalURL string, shortURL string, _ string) error {
 	urlItems, err := fs.ReadURLItems()
 	if err != nil {
@@ -73,6 +79,7 @@ func (fs *FileStorage) AddNewURL(_ context.Context, originalURL string, shortURL
 	return nil
 }
 
+// AddManyUrls adds multiple originalURL-shortURL pairs into the storage
 func (fs *FileStorage) AddManyUrls(_ context.Context, urls InputManyUrls, _ string) (OutputManyUrls, error) {
 	var output OutputManyUrls
 	urlItems, readFileErr := fs.ReadURLItems()
@@ -109,6 +116,7 @@ func (fs *FileStorage) AddManyUrls(_ context.Context, urls InputManyUrls, _ stri
 	return output, nil
 }
 
+// GetUserUrls returns multiple originalURL-shortURL pairs of current user
 func (fs *FileStorage) GetUserUrls(_ context.Context, _ string) (UserUrls, error) {
 	output := make(UserUrls, 0)
 	urlItems, err := fs.ReadURLItems()
@@ -126,6 +134,7 @@ func (fs *FileStorage) GetUserUrls(_ context.Context, _ string) (UserUrls, error
 	return output, nil
 }
 
+// DeleteUserUrls deletes multiple short urls
 func (fs *FileStorage) DeleteUserUrls(_ context.Context, shortUrls []string, _ string) error {
 	urlItems, err := fs.ReadURLItems()
 	if err != nil {
@@ -145,6 +154,7 @@ func (fs *FileStorage) DeleteUserUrls(_ context.Context, shortUrls []string, _ s
 	return nil
 }
 
+// WriteURLItem writes multiple originalURL-shortURL pairs into the file
 func (fs *FileStorage) WriteURLItem(urlMap FileData) error {
 	var fileWriter, err = NewProducer(*config.FileStoragePath)
 	if err != nil {
@@ -159,6 +169,7 @@ func (fs *FileStorage) WriteURLItem(urlMap FileData) error {
 	return nil
 }
 
+// ReadURLItems reads multiple originalURL-shortURL pairs from the file
 func (fs *FileStorage) ReadURLItems() (*FileData, error) {
 	if _, err := os.Stat(*config.FileStoragePath); err == nil {
 		fileReader, fileErr := NewConsumer(*config.FileStoragePath)
@@ -184,11 +195,13 @@ func (fs *FileStorage) ReadURLItems() (*FileData, error) {
 	return &FileData{}, nil
 }
 
+// Producer is a producer type
 type Producer struct {
 	file   *os.File
 	writer *bufio.Writer
 }
 
+// NewProducer constructs new Producer struct
 func NewProducer(filename string) (*Producer, error) {
 	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
@@ -201,6 +214,7 @@ func NewProducer(filename string) (*Producer, error) {
 	}, nil
 }
 
+// WriteURLItems writes multiple originalURL-shortURL pairs into the file
 func (p *Producer) WriteURLItems(urlItems *FileData) error {
 	data, err := json.MarshalIndent(&urlItems, "", "   ")
 	if err != nil {
@@ -218,15 +232,18 @@ func (p *Producer) WriteURLItems(urlItems *FileData) error {
 	return p.writer.Flush()
 }
 
+// Close closes the producer
 func (p *Producer) Close() error {
 	return p.file.Close()
 }
 
+// Consumer is a consumer type
 type Consumer struct {
 	file   *os.File
 	reader *bufio.Reader
 }
 
+// NewConsumer constructs new Consumer struct
 func NewConsumer(filename string) (*Consumer, error) {
 	file, err := os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
@@ -239,6 +256,7 @@ func NewConsumer(filename string) (*Consumer, error) {
 	}, nil
 }
 
+// Close closes the consumer
 func (c *Consumer) Close() error {
 	return c.file.Close()
 }
