@@ -3,9 +3,10 @@ package shortenbatch
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+
 	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"github.com/sheinsviatoslav/shortener/internal/utils"
-	"net/http"
 )
 
 type Handler struct {

@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"net/http"
+
 	"github.com/sheinsviatoslav/shortener/internal/auth"
 	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
-	"net/http"
 )
 
 type ReqBody []string

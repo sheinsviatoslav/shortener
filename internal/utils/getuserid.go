@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/sheinsviatoslav/shortener/internal/middleware"
 	"net/http"
+
+	"github.com/sheinsviatoslav/shortener/internal/middleware"
 )
 
 func GetUserID(r *http.Request) string {

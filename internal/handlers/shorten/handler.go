@@ -3,13 +3,14 @@ package shorten
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/url"
+
 	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"github.com/sheinsviatoslav/shortener/internal/utils"
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
-	"net/http"
-	"net/url"
 )
 
 type ReqBody struct {

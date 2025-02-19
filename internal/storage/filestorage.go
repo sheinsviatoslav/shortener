@@ -5,13 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/sheinsviatoslav/shortener/internal/common"
-	"github.com/sheinsviatoslav/shortener/internal/config"
-	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 	"io"
 	"net/url"
 	"os"
 	"slices"
+
+	"github.com/sheinsviatoslav/shortener/internal/common"
+	"github.com/sheinsviatoslav/shortener/internal/config"
+	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
 )
 
 type FileData map[string]string

@@ -1,9 +1,11 @@
 package geturl
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
+
+	"github.com/sheinsviatoslav/shortener/internal/storage"
 )
 
 type Handler struct {

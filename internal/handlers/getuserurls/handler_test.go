@@ -7,17 +7,19 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"github.com/golang/mock/gomock"
-	"github.com/google/uuid"
-	"github.com/sheinsviatoslav/shortener/internal/common"
-	"github.com/sheinsviatoslav/shortener/internal/mocks"
-	"github.com/sheinsviatoslav/shortener/internal/storage"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sheinsviatoslav/shortener/internal/common"
+	"github.com/sheinsviatoslav/shortener/internal/mocks"
+	"github.com/sheinsviatoslav/shortener/internal/storage"
 )
 
 func TestShortenHandler(t *testing.T) {

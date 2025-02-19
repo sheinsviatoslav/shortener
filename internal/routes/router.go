@@ -1,8 +1,12 @@
 package routes
 
 import (
+	"log"
+	"time"
+
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/createurl"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/deleteuserurls"
@@ -13,8 +17,6 @@ import (
 	"github.com/sheinsviatoslav/shortener/internal/handlers/shortenbatch"
 	"github.com/sheinsviatoslav/shortener/internal/middleware"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
-	"log"
-	"time"
 )
 
 func MainRouter() chi.Router {

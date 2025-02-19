@@ -4,11 +4,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"net/http"
+
 	"github.com/sheinsviatoslav/shortener/internal/auth"
 	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"github.com/sheinsviatoslav/shortener/internal/utils"
-	"net/http"
 )
 
 type Handler struct {

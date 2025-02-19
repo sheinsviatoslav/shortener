@@ -3,10 +3,12 @@ package middleware
 import (
 	"context"
 	"encoding/hex"
+	"net/http"
+
 	"github.com/google/uuid"
+
 	"github.com/sheinsviatoslav/shortener/internal/auth"
 	"github.com/sheinsviatoslav/shortener/internal/common"
-	"net/http"
 )
 
 type contextKey string
