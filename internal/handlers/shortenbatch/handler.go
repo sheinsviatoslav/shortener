@@ -1,3 +1,4 @@
+// Package shortenbatch allows to create multiple short urls from multiple original urls
 package shortenbatch
 
 import (

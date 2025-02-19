@@ -1,3 +1,4 @@
+// Package shorten allows to create short url from original url using json input
 package shorten
 
 import (

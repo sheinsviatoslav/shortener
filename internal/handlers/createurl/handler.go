@@ -1,3 +1,4 @@
+// Package createurl allows to create short url from original url using plain text content type
 package createurl
 
 import (

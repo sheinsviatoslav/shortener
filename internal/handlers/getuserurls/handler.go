@@ -1,3 +1,4 @@
+// Package getuserurls allows to get multiple created urls of current user
 package getuserurls
 
 import (

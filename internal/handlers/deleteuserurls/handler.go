@@ -1,3 +1,4 @@
+// Package deleteuserurls allows to delete multiple urls
 package deleteuserurls
 
 import (

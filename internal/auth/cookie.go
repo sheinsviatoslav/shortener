@@ -1,3 +1,4 @@
+// Package auth is responsible for writing and reading cookies
 package auth
 
 import (

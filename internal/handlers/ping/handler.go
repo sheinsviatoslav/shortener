@@ -1,3 +1,4 @@
+// Package ping checks if database is successfully connected
 package ping
 
 import (

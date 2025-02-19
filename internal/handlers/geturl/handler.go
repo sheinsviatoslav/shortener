@@ -1,3 +1,4 @@
+// Package geturl allows to get single original url and redirect to it
 package geturl
 
 import (
