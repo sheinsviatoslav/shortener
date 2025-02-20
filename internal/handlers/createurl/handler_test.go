@@ -2,13 +2,6 @@ package createurl
 
 import (
 	"fmt"
-	"github.com/golang/mock/gomock"
-	"github.com/sheinsviatoslav/shortener/internal/common"
-	"github.com/sheinsviatoslav/shortener/internal/config"
-	"github.com/sheinsviatoslav/shortener/internal/mocks"
-	"github.com/sheinsviatoslav/shortener/internal/storage"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +9,15 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sheinsviatoslav/shortener/internal/common"
+	"github.com/sheinsviatoslav/shortener/internal/config"
+	"github.com/sheinsviatoslav/shortener/internal/mocks"
+	"github.com/sheinsviatoslav/shortener/internal/storage"
 )
 
 func TestCreateHandler(t *testing.T) {

@@ -4,22 +4,26 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"net/url"
+
 	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
-	"net/url"
 )
 
+// PgStorage is a storage type
 type PgStorage struct {
 	DB *sql.DB
 }
 
+// NewPgStorage constructs new PgStorage struct
 func NewPgStorage() *PgStorage {
 	return &PgStorage{
 		DB: nil,
 	}
 }
 
+// Connect method connects to database
 func (p *PgStorage) Connect() error {
 	var err error
 	p.DB, err = sql.Open("pgx", *config.DatabaseDSN)
@@ -42,6 +46,7 @@ func (p *PgStorage) Connect() error {
 	return nil
 }
 
+// GetOriginalURLByShortURL returns original url
 func (p *PgStorage) GetOriginalURLByShortURL(ctx context.Context, shortURL string) (string, bool, error) {
 	query := `SELECT original_url, is_deleted FROM urls WHERE short_url = $1`
 	row := p.DB.QueryRowContext(ctx, query, shortURL)
@@ -60,6 +65,7 @@ func (p *PgStorage) GetOriginalURLByShortURL(ctx context.Context, shortURL strin
 	return data.OriginalURL, false, nil
 }
 
+// GetShortURLByOriginalURL returns short url
 func (p *PgStorage) GetShortURLByOriginalURL(ctx context.Context, originalURL string) (string, bool, error) {
 	query := `SELECT short_url FROM urls WHERE original_url = $1`
 	row := p.DB.QueryRowContext(ctx, query, originalURL)
@@ -76,6 +82,7 @@ func (p *PgStorage) GetShortURLByOriginalURL(ctx context.Context, originalURL st
 	return shortURL, true, nil
 }
 
+// AddNewURL adds originalURL-shortURL pair into the storage
 func (p *PgStorage) AddNewURL(ctx context.Context, originalURL string, shortURL string, userID string) error {
 	query := `INSERT INTO urls (original_url, short_url, user_id) VALUES($1, $2, $3)`
 	if _, err := p.DB.ExecContext(ctx, query, originalURL, shortURL, userID); err != nil {
@@ -85,6 +92,7 @@ func (p *PgStorage) AddNewURL(ctx context.Context, originalURL string, shortURL 
 	return nil
 }
 
+// AddManyUrls adds multiple originalURL-shortURL pairs into the storage
 func (p *PgStorage) AddManyUrls(ctx context.Context, urls InputManyUrls, userID string) (OutputManyUrls, error) {
 	var output OutputManyUrls
 	tx, err := p.DB.Begin()
@@ -128,6 +136,7 @@ func (p *PgStorage) AddManyUrls(ctx context.Context, urls InputManyUrls, userID 
 	return output, nil
 }
 
+// GetUserUrls returns multiple originalURL-shortURL pairs of current user
 func (p *PgStorage) GetUserUrls(ctx context.Context, userID string) (UserUrls, error) {
 	query := `SELECT original_url, short_url FROM urls WHERE user_id = $1`
 	rows, err := p.DB.QueryContext(ctx, query, userID)
@@ -159,6 +168,7 @@ func (p *PgStorage) GetUserUrls(ctx context.Context, userID string) (UserUrls, e
 	return output, nil
 }
 
+// DeleteUserUrls deletes multiple short urls
 func (p *PgStorage) DeleteUserUrls(ctx context.Context, shortUrls []string, userID string) error {
 	tx, err := p.DB.Begin()
 	if err != nil {

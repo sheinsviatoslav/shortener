@@ -1,21 +1,27 @@
+// Package geturl allows to get single original url and redirect to it
 package geturl
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
+
+	"github.com/sheinsviatoslav/shortener/internal/storage"
 )
 
+// Handler is a handler type
 type Handler struct {
 	storage storage.Storage
 }
 
+// NewHandler is a handler constructor
 func NewHandler(storage storage.Storage) *Handler {
 	return &Handler{
 		storage: storage,
 	}
 }
 
+// Handle is a main handler method
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	shortURL := chi.URLParam(r, "shortURL")
 	if shortURL == "" {

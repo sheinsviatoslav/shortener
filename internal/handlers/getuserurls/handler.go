@@ -1,24 +1,31 @@
+// Package getuserurls allows to get multiple created urls of current user
 package getuserurls
 
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"net/http"
+
 	"github.com/sheinsviatoslav/shortener/internal/auth"
 	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
-	"net/http"
+	"github.com/sheinsviatoslav/shortener/internal/utils"
 )
 
+// Handler is a handler type
 type Handler struct {
 	storage storage.Storage
 }
 
+// NewHandler is a handler constructor
 func NewHandler(storage storage.Storage) *Handler {
 	return &Handler{
 		storage: storage,
 	}
 }
 
+// Handle is a main handler method
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	secretKey, err := hex.DecodeString(common.SecretKey)
 	if err != nil {
@@ -26,13 +33,17 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	value, err := auth.ReadEncryptedCookie(r, "userID", secretKey)
-	if err != nil {
+	userID, err := auth.ReadEncryptedCookie(r, "userID", secretKey)
+	if err != nil && !errors.Is(err, http.ErrNoCookie) {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	urls, err := h.storage.GetUserUrls(r.Context(), value)
+	if userID == "" {
+		userID = utils.GetUserID(r)
+	}
+
+	urls, err := h.storage.GetUserUrls(r.Context(), userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

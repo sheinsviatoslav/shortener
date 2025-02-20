@@ -1,8 +1,12 @@
 package routes
 
 import (
+	"log"
+	"time"
+
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/createurl"
 	"github.com/sheinsviatoslav/shortener/internal/handlers/deleteuserurls"
@@ -13,10 +17,9 @@ import (
 	"github.com/sheinsviatoslav/shortener/internal/handlers/shortenbatch"
 	"github.com/sheinsviatoslav/shortener/internal/middleware"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
-	"log"
-	"time"
 )
 
+// MainRouter is the router for handling endpoints
 func MainRouter() chi.Router {
 	r := chi.NewRouter()
 	r.Use(middleware.WithLogger)
@@ -45,6 +48,7 @@ func MainRouter() chi.Router {
 	r.Post("/api/shorten/batch", shortenbatch.NewHandler(st).Handle)
 	r.Get("/api/user/urls", getuserurls.NewHandler(st).Handle)
 	r.Delete("/api/user/urls", deleteuserurls.NewHandler(st).Handle)
+	r.Mount("/debug", chiMiddleware.Profiler())
 
 	return r
 }

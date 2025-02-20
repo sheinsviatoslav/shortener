@@ -1,26 +1,31 @@
+// Package createurl allows to create short url from original url using plain text content type
 package createurl
 
 import (
+	"io"
+	"net/http"
+	"net/url"
+
 	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"github.com/sheinsviatoslav/shortener/internal/utils"
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
-	"io"
-	"net/http"
-	"net/url"
 )
 
+// Handler is a handler type
 type Handler struct {
 	storage storage.Storage
 }
 
+// NewHandler is a handler constructor
 func NewHandler(storage storage.Storage) *Handler {
 	return &Handler{
 		storage: storage,
 	}
 }
 
+// Handle is a main handler method
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {

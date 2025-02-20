@@ -13,6 +13,7 @@ type gzipWriter struct {
 	Writer io.Writer
 }
 
+// Write implementation
 func (w gzipWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
 }
@@ -34,10 +35,12 @@ func newCompressReader(r io.ReadCloser) (*compressReader, error) {
 	}, nil
 }
 
+// Read implementation
 func (c compressReader) Read(p []byte) (n int, err error) {
 	return c.zr.Read(p)
 }
 
+// Close implementation
 func (c *compressReader) Close() error {
 	if err := c.r.Close(); err != nil {
 		return err
@@ -45,6 +48,7 @@ func (c *compressReader) Close() error {
 	return c.zr.Close()
 }
 
+// GzipHandle is a middleware for compressing requests and responses
 func GzipHandle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w

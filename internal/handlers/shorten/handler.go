@@ -1,35 +1,42 @@
+// Package shorten allows to create short url from original url using json input
 package shorten
 
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/url"
+
 	"github.com/sheinsviatoslav/shortener/internal/common"
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"github.com/sheinsviatoslav/shortener/internal/utils"
 	"github.com/sheinsviatoslav/shortener/internal/utils/hash"
-	"net/http"
-	"net/url"
 )
 
+// ReqBody is a request body type
 type ReqBody struct {
 	URL string
 }
 
+// RespBody is a response body type
 type RespBody struct {
 	Result string `json:"result"`
 }
 
+// Handler is a handler type
 type Handler struct {
 	storage storage.Storage
 }
 
+// NewHandler is a handler constructor
 func NewHandler(storage storage.Storage) *Handler {
 	return &Handler{
 		storage: storage,
 	}
 }
 
+// Handle is a main handler method
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	var reqBody ReqBody
 	var buf bytes.Buffer
