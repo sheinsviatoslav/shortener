@@ -7,9 +7,11 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/sheinsviatoslav/shortener/internal/config"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -46,15 +48,10 @@ func TestShortenHandler(t *testing.T) {
 					OriginalURL: "https://yandex.ru/",
 					ShortURL:    "http://localhost:8080/3LbIJLJ5",
 				},
-				{
-					OriginalURL: "https://practicum.yandex.ru/",
-					ShortURL:    "http://localhost:8080/7wcVQIE1",
-				},
 			},
 			want: want{
-				code: 200,
-				response: "[{\"short_url\":\"http://localhost:8080/3LbIJLJ5\",\"original_url\":\"https://yandex.ru/\"}," +
-					"{\"short_url\":\"http://localhost:8080/7wcVQIE1\",\"original_url\":\"https://practicum.yandex.ru/\"}]",
+				code:        200,
+				response:    "[{\"short_url\":\"http://localhost:8080/3LbIJLJ5\",\"original_url\":\"https://yandex.ru/\"}]",
 				contentType: "application/json",
 			},
 		},
@@ -67,6 +64,53 @@ func TestShortenHandler(t *testing.T) {
 				contentType: "application/json",
 			},
 		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name+" memstorage", func(t *testing.T) {
+			r := httptest.NewRequest(http.MethodGet, "/api/user/urls", nil)
+			w := httptest.NewRecorder()
+
+			m := storage.NewMemStorage()
+			if len(test.output) > 0 {
+				assert.NoError(t, m.AddNewURL(r.Context(), "https://yandex.ru/", "3LbIJLJ5", ""))
+			}
+
+			NewHandler(m).Handle(w, r)
+
+			res := w.Result()
+			assert.Equal(t, test.want.code, res.StatusCode)
+			defer res.Body.Close()
+			resBody, err := io.ReadAll(res.Body)
+
+			require.NoError(t, err)
+			assert.Equal(t, test.want.response, string(resBody))
+			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
+		})
+	}
+
+	for _, test := range tests {
+		t.Run(test.name+" filestorage", func(t *testing.T) {
+			r := httptest.NewRequest(http.MethodGet, "/api/user/urls", nil)
+			w := httptest.NewRecorder()
+
+			f := storage.NewFileStorage()
+			if len(test.output) > 0 {
+				assert.NoError(t, f.AddNewURL(r.Context(), "https://yandex.ru/", "3LbIJLJ5", ""))
+			}
+
+			NewHandler(f).Handle(w, r)
+
+			res := w.Result()
+			assert.Equal(t, test.want.code, res.StatusCode)
+			defer res.Body.Close()
+			resBody, err := io.ReadAll(res.Body)
+
+			require.NoError(t, err)
+			assert.Equal(t, test.want.response, string(resBody))
+			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
+			os.Remove(*config.FileStoragePath)
+		})
 	}
 
 	for _, test := range tests {

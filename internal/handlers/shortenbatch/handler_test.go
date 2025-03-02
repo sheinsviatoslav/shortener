@@ -3,9 +3,14 @@ package shortenbatch
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"github.com/sheinsviatoslav/shortener/internal/common"
+	"github.com/sheinsviatoslav/shortener/internal/config"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"regexp"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -95,94 +100,65 @@ func TestShortenHandler(t *testing.T) {
 		//},
 	}
 
-	//for _, test := range tests {
-	//	t.Run(test.name+" memstorage", func(t *testing.T) {
-	//		body, _ := json.Marshal(test.body)
-	//		request := httptest.NewRequest(http.MethodPost, "/api/shorten/batch", bytes.NewReader(body))
-	//		w := httptest.NewRecorder()
-	//
-	//		m := storage.NewMemStorage()
-	//		_, err := m.AddManyUrls(request.Context(), storage.InputManyUrls{
-	//			{
-	//				CorrelationID: "0a7b6ee4-ffdf-4394-9ac6-b42b652b389a",
-	//				OriginalURL:   "https://practicum.yandex.ru/",
-	//			},
-	//			{
-	//				CorrelationID: "489748a4-7521-4821-bdf9-52c1f6059387",
-	//				OriginalURL:   "https://yandex.ru/",
-	//			},
-	//		}, "")
-	//		if err != nil {
-	//			require.NoError(t, err)
-	//		}
-	//		NewHandler(m).Handle(w, request)
-	//
-	//		res := w.Result()
-	//		assert.Equal(t, test.want.code, res.StatusCode)
-	//		defer res.Body.Close()
-	//		resBody, err := io.ReadAll(res.Body)
-	//
-	//		require.NoError(t, err)
-	//
-	//		isMatch, _ := regexp.MatchString(fmt.Sprintf(
-	//			"http://localhost:8080/[0-9a-zA-Z]{%d}",
-	//			common.DefaultHashLength,
-	//		), string(resBody))
-	//		require.NoError(t, err)
-	//		assert.Equal(t, true, isMatch)
-	//		assert.Equal(t, test.want.response, string(resBody))
-	//		assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
-	//	})
-	//}
+	for _, test := range tests {
+		t.Run(test.name+" memstorage", func(t *testing.T) {
+			body, _ := json.Marshal(test.body)
+			request := httptest.NewRequest(http.MethodPost, "/api/shorten/batch", bytes.NewReader(body))
+			w := httptest.NewRecorder()
 
-	//for _, test := range tests {
-	//	t.Run(test.name+" filestorage", func(t *testing.T) {
-	//		body, _ := json.Marshal(test.body)
-	//		request := httptest.NewRequest(http.MethodPost, "/api/shorten/batch", bytes.NewReader(body))
-	//		w := httptest.NewRecorder()
-	//
-	//		fs := storage.NewFileStorage()
-	//		_, err := fs.AddManyUrls(request.Context(), storage.InputManyUrls{
-	//			{
-	//				CorrelationID: "0a7b6ee4-ffdf-4394-9ac6-b42b652b389a",
-	//				OriginalURL:   "https://practicum.yandex.ru/",
-	//			},
-	//			{
-	//				CorrelationID: "489748a4-7521-4821-bdf9-52c1f6059387",
-	//				OriginalURL:   "https://yandex.ru/",
-	//			},
-	//		}, "")
-	//
-	//		if err != nil {
-	//			require.NoError(t, err)
-	//		}
-	//		NewHandler(fs).Handle(w, request)
-	//
-	//		res := w.Result()
-	//		assert.Equal(t, test.want.code, res.StatusCode)
-	//		defer res.Body.Close()
-	//		resBody, err := io.ReadAll(res.Body)
-	//
-	//		require.NoError(t, err)
-	//
-	//		for _, val := range resBody {
-	//			fmt.Println(val)
-	//			isMatch, _ := regexp.MatchString(fmt.Sprintf(
-	//				"http://localhost:8080/[0-9a-zA-Z]{%d}",
-	//				common.DefaultHashLength,
-	//			), string(val))
-	//			require.NoError(t, err)
-	//			assert.Equal(t, true, isMatch)
-	//		}
-	//
-	//		assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
-	//
-	//		err = os.Remove(*config.FileStoragePath)
-	//		if err != nil {
-	//			require.NoError(t, err)
-	//		}
-	//	})
-	//}
+			m := storage.NewMemStorage()
+			NewHandler(m).Handle(w, request)
+			res := w.Result()
+			assert.Equal(t, test.want.code, res.StatusCode)
+			defer res.Body.Close()
+
+			var resBody storage.OutputManyUrls
+			var buf bytes.Buffer
+			buf.ReadFrom(res.Body)
+			json.Unmarshal(buf.Bytes(), &resBody)
+
+			for _, v := range resBody {
+				isMatch, _ := regexp.MatchString(fmt.Sprintf(
+					"http://localhost:8080/[0-9a-zA-Z]{%d}",
+					common.DefaultHashLength,
+				), v.ShortURL)
+				assert.Equal(t, true, isMatch)
+			}
+
+			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
+		})
+	}
+
+	for _, test := range tests {
+		t.Run(test.name+" filestorage", func(t *testing.T) {
+			body, _ := json.Marshal(test.body)
+			request := httptest.NewRequest(http.MethodPost, "/api/shorten/batch", bytes.NewReader(body))
+			w := httptest.NewRecorder()
+
+			fs := storage.NewFileStorage()
+			NewHandler(fs).Handle(w, request)
+
+			res := w.Result()
+			assert.Equal(t, test.want.code, res.StatusCode)
+			defer res.Body.Close()
+
+			var resBody storage.OutputManyUrls
+			var buf bytes.Buffer
+			buf.ReadFrom(res.Body)
+			json.Unmarshal(buf.Bytes(), &resBody)
+
+			for _, v := range resBody {
+				isMatch, _ := regexp.MatchString(fmt.Sprintf(
+					"http://localhost:8080/[0-9a-zA-Z]{%d}",
+					common.DefaultHashLength,
+				), v.ShortURL)
+				assert.Equal(t, true, isMatch)
+			}
+
+			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
+			os.Remove(*config.FileStoragePath)
+		})
+	}
 
 	for _, test := range tests {
 		t.Run(test.name+" pgstorage", func(t *testing.T) {
