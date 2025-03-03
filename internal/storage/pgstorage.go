@@ -111,9 +111,9 @@ func (p *PgStorage) AddManyUrls(ctx context.Context, urls InputManyUrls, userID 
 			return nil, err
 		}
 
-		shortURL, isExists, dbErr := p.GetShortURLByOriginalURL(ctx, item.OriginalURL)
-		if dbErr != nil {
-			return nil, dbErr
+		shortURL, isExists, err := p.GetShortURLByOriginalURL(ctx, item.OriginalURL)
+		if err != nil {
+			return nil, err
 		}
 
 		if !isExists {
@@ -177,7 +177,6 @@ func (p *PgStorage) DeleteUserUrls(ctx context.Context, shortUrls []string, user
 	defer tx.Rollback()
 
 	for _, shortURL := range shortUrls {
-
 		query := `UPDATE urls SET is_deleted = true WHERE short_url = $1 AND user_id = $2`
 		if _, err = tx.ExecContext(ctx, query, shortURL, userID); err != nil {
 			return err

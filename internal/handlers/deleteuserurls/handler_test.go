@@ -9,9 +9,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/sheinsviatoslav/shortener/internal/config"
+	"github.com/sheinsviatoslav/shortener/internal/storage"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -48,6 +51,87 @@ func TestShortenHandler(t *testing.T) {
 				contentType: "application/json",
 			},
 		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name+" memstorage", func(t *testing.T) {
+			body, _ := json.Marshal(test.input)
+			r := httptest.NewRequest(http.MethodDelete, "/api/user/urls", bytes.NewReader(body))
+			w := httptest.NewRecorder()
+
+			m := storage.NewMemStorage()
+			assert.NoError(t, m.AddNewURL(r.Context(), "https://yandex.ru/", "3LbIJLJ5", ""))
+			assert.NoError(t, m.AddNewURL(r.Context(), "https://practicum.ru/", "99XGYq4c", ""))
+
+			userID := uuid.New().String()
+			secretKey, _ := hex.DecodeString(common.SecretKey)
+			aesBlock, _ := aes.NewCipher(secretKey)
+			aesGCM, _ := cipher.NewGCM(aesBlock)
+
+			nonce := make([]byte, aesGCM.NonceSize())
+			io.ReadFull(rand.Reader, nonce)
+
+			plaintext := fmt.Sprintf("%s:%s", "userID", userID)
+			encryptedValue := aesGCM.Seal(nonce, nonce, []byte(plaintext), nil)
+
+			r.AddCookie(&http.Cookie{
+				Name:  "userID",
+				Value: base64.URLEncoding.EncodeToString(encryptedValue),
+			})
+
+			NewHandler(m).Handle(w, r)
+
+			res := w.Result()
+			assert.Equal(t, test.want.code, res.StatusCode)
+			defer res.Body.Close()
+
+			url, _, _ := m.GetOriginalURLByShortURL(r.Context(), test.input[0])
+			assert.Equal(t, "", url)
+			url, _, _ = m.GetOriginalURLByShortURL(r.Context(), test.input[1])
+			assert.Equal(t, "", url)
+			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
+		})
+	}
+
+	for _, test := range tests {
+		t.Run(test.name+" filestorage", func(t *testing.T) {
+			body, _ := json.Marshal(test.input)
+			r := httptest.NewRequest(http.MethodDelete, "/api/user/urls", bytes.NewReader(body))
+			w := httptest.NewRecorder()
+
+			f := storage.NewFileStorage()
+			assert.NoError(t, f.AddNewURL(r.Context(), "https://yandex.ru/", "3LbIJLJ5", ""))
+			assert.NoError(t, f.AddNewURL(r.Context(), "https://practicum.ru/", "99XGYq4c", ""))
+
+			userID := uuid.New().String()
+			secretKey, _ := hex.DecodeString(common.SecretKey)
+			aesBlock, _ := aes.NewCipher(secretKey)
+			aesGCM, _ := cipher.NewGCM(aesBlock)
+
+			nonce := make([]byte, aesGCM.NonceSize())
+			io.ReadFull(rand.Reader, nonce)
+
+			plaintext := fmt.Sprintf("%s:%s", "userID", userID)
+			encryptedValue := aesGCM.Seal(nonce, nonce, []byte(plaintext), nil)
+
+			r.AddCookie(&http.Cookie{
+				Name:  "userID",
+				Value: base64.URLEncoding.EncodeToString(encryptedValue),
+			})
+
+			NewHandler(f).Handle(w, r)
+
+			res := w.Result()
+			assert.Equal(t, test.want.code, res.StatusCode)
+			defer res.Body.Close()
+
+			url, _, _ := f.GetOriginalURLByShortURL(r.Context(), test.input[0])
+			assert.Equal(t, "", url)
+			url, _, _ = f.GetOriginalURLByShortURL(r.Context(), test.input[1])
+			assert.Equal(t, "", url)
+			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
+			os.Remove(*config.FileStoragePath)
+		})
 	}
 
 	for _, test := range tests {
