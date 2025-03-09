@@ -14,6 +14,7 @@ type Config struct {
 	BaseURL         string `env:"BASE_URL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	DatabaseDSN     string `env:"DATABASE_DSN"`
+	EnableHTTPS     string `env:"ENABLE_HTTPS"`
 }
 
 // App config params
@@ -22,6 +23,7 @@ var (
 	BaseURL         = flag.String("b", "http://localhost:8080/", "base address of shortened URL")
 	FileStoragePath = flag.String("f", "url_storage.json", "file storage path")
 	DatabaseDSN     = flag.String("d", "", "database data source name")
+	EnableHTTPS     = flag.String("s", "", "activate https connection")
 )
 
 // Init is a function that checks if config params are from flags or from environment variables
@@ -46,6 +48,10 @@ func Init() {
 
 	if cfg.DatabaseDSN != "" {
 		*DatabaseDSN = cfg.DatabaseDSN
+	}
+
+	if cfg.EnableHTTPS != "" {
+		*EnableHTTPS = cfg.EnableHTTPS
 	}
 
 	if _, err := url.ParseRequestURI(*BaseURL); err != nil {
