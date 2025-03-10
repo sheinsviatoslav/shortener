@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/sheinsviatoslav/shortener/internal/cert"
@@ -9,6 +11,9 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 var (
@@ -23,14 +28,33 @@ func main() {
 	fmt.Printf("Build commit: %s\n", buildCommit)
 	config.Init()
 
+	var srv = http.Server{
+		Addr:    *config.ServerAddr,
+		Handler: routes.MainRouter(),
+	}
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	go func() {
+		<-sigs
+		if err := srv.Shutdown(context.Background()); err != nil {
+			log.Printf("Server Shutdown error: %v", err)
+		}
+	}()
+
 	log.Println("listen on", *config.ServerAddr)
 	if *config.EnableHTTPS == "true" {
 		if err := cert.CreateTLSCertificate(); err != nil {
 			log.Fatal(err)
 		}
-		log.Fatal(http.ListenAndServeTLS(*config.ServerAddr, cert.CertificateFileName, cert.KeyFileName, routes.MainRouter()))
+		if err := srv.ListenAndServeTLS(cert.CertificateFileName, cert.KeyFileName); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("HTTPS server error: %v", err)
+		}
 	} else {
-		log.Fatal(http.ListenAndServe(*config.ServerAddr, routes.MainRouter()))
+		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("HTTP server error: %v", err)
+		}
 	}
 
 }
