@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/sheinsviatoslav/shortener/internal/cert"
 	"github.com/sheinsviatoslav/shortener/internal/config"
 	"github.com/sheinsviatoslav/shortener/internal/routes"
 	"log"
@@ -23,6 +24,13 @@ func main() {
 	config.Init()
 
 	log.Println("listen on", *config.ServerAddr)
-	log.Fatal(http.ListenAndServe(*config.ServerAddr, routes.MainRouter()))
+	if *config.EnableHTTPS == "true" {
+		if err := cert.CreateTLSCertificate(); err != nil {
+			log.Fatal(err)
+		}
+		log.Fatal(http.ListenAndServeTLS(*config.ServerAddr, cert.CertificateFileName, cert.KeyFileName, routes.MainRouter()))
+	} else {
+		log.Fatal(http.ListenAndServe(*config.ServerAddr, routes.MainRouter()))
+	}
 
 }
