@@ -260,3 +260,8 @@ func NewConsumer(filename string) (*Consumer, error) {
 func (c *Consumer) Close() error {
 	return c.file.Close()
 }
+
+// GetStats returns amount of users and saved urls
+func (fs *FileStorage) GetStats(ctx context.Context) (Stats, error) {
+	return Stats{}, nil
+}

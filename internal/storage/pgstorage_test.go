@@ -14,7 +14,7 @@ package storage
 //	"testing"
 //)
 //
-//var defaultDSN = ""
+//var defaultDSN = "user=postgres"
 //
 //func dropDB(p *PgStorage) {
 //	p.DB.Exec("DROP TABLE urls")
