@@ -188,3 +188,16 @@ func (p *PgStorage) DeleteUserUrls(ctx context.Context, shortUrls []string, user
 	}
 	return nil
 }
+
+// GetStats returns amount of users and saved urls
+func (p *PgStorage) GetStats(ctx context.Context) (Stats, error) {
+	data := Stats{}
+
+	query := `SELECT COUNT(*), COUNT(DISTINCT user_id) FROM urls`
+	row := p.DB.QueryRowContext(ctx, query)
+	if err := row.Scan(&data.Urls, &data.Users); err != nil {
+		return data, err
+	}
+
+	return data, nil
+}

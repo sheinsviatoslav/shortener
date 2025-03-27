@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/sheinsviatoslav/shortener/internal/handlers/internalstats"
 	"log"
 	"time"
 
@@ -48,6 +49,7 @@ func MainRouter() chi.Router {
 	r.Post("/api/shorten/batch", shortenbatch.NewHandler(st).Handle)
 	r.Get("/api/user/urls", getuserurls.NewHandler(st).Handle)
 	r.Delete("/api/user/urls", deleteuserurls.NewHandler(st).Handle)
+	r.Get("/api/internal/stats", internalstats.NewHandler(st).Handle)
 	r.Mount("/debug", chiMiddleware.Profiler())
 
 	return r

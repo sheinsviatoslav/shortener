@@ -118,3 +118,8 @@ func (m *MemStorage) DeleteUserUrls(_ context.Context, shortUrls []string, _ str
 
 	return nil
 }
+
+// GetStats returns amount of users and saved urls
+func (m *MemStorage) GetStats(ctx context.Context) (Stats, error) {
+	return Stats{}, nil
+}

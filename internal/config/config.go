@@ -17,6 +17,7 @@ type Config struct {
 	DatabaseDSN     string `env:"DATABASE_DSN" json:"database_dsn"`
 	EnableHTTPS     string `env:"ENABLE_HTTPS" json:"enable_https"`
 	ConfigFile      string `env:"CONFIG_FILE" json:"config_file"`
+	TrustedSubnet   string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 }
 
 // App config params
@@ -27,6 +28,7 @@ var (
 	DatabaseDSN     = flag.String("d", "", "database data source name")
 	EnableHTTPS     = flag.String("s", "", "activate https connection")
 	ConfigFile      = flag.String("c", "", "config file")
+	TrustedSubnet   = flag.String("t", "", "trusted subnet")
 )
 
 // Init is a function that checks if config params are from flags or from environment variables
@@ -85,6 +87,12 @@ func Init() {
 		*EnableHTTPS = cfg.EnableHTTPS
 	} else if *EnableHTTPS == "" && fileCfg.EnableHTTPS != "" {
 		*EnableHTTPS = fileCfg.EnableHTTPS
+	}
+
+	if cfg.TrustedSubnet != "" {
+		*TrustedSubnet = cfg.TrustedSubnet
+	} else if *TrustedSubnet == "" && fileCfg.TrustedSubnet != "" {
+		*TrustedSubnet = fileCfg.TrustedSubnet
 	}
 
 	if _, err := url.ParseRequestURI(*BaseURL); err != nil {
