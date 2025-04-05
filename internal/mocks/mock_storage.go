@@ -9,7 +9,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-
 	storage "github.com/sheinsviatoslav/shortener/internal/storage"
 )
 
@@ -109,6 +108,21 @@ func (m *MockStorage) GetShortURLByOriginalURL(arg0 context.Context, arg1 string
 func (mr *MockStorageMockRecorder) GetShortURLByOriginalURL(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShortURLByOriginalURL", reflect.TypeOf((*MockStorage)(nil).GetShortURLByOriginalURL), arg0, arg1)
+}
+
+// GetStats mocks base method.
+func (m *MockStorage) GetStats(arg0 context.Context) (storage.Stats, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStats", arg0)
+	ret0, _ := ret[0].(storage.Stats)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStats indicates an expected call of GetStats.
+func (mr *MockStorageMockRecorder) GetStats(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStats", reflect.TypeOf((*MockStorage)(nil).GetStats), arg0)
 }
 
 // GetUserUrls mocks base method.

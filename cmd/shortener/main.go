@@ -7,8 +7,12 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/sheinsviatoslav/shortener/internal/cert"
 	"github.com/sheinsviatoslav/shortener/internal/config"
+	"github.com/sheinsviatoslav/shortener/internal/grpcserv"
 	"github.com/sheinsviatoslav/shortener/internal/routes"
+	pb "github.com/sheinsviatoslav/shortener/proto"
+	"google.golang.org/grpc"
 	"log"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -27,6 +31,20 @@ func main() {
 	fmt.Printf("Build date: %s\n", buildDate)
 	fmt.Printf("Build commit: %s\n", buildCommit)
 	config.Init()
+
+	go func() {
+		listen, err := net.Listen("tcp", ":3200")
+		if err != nil {
+			log.Fatal(err)
+		}
+		s := grpc.NewServer()
+		pb.RegisterUrlsServer(s, &grpcserv.UrlsServer{})
+
+		fmt.Println("Сервер gRPC начал работу")
+		if err := s.Serve(listen); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	var srv = http.Server{
 		Addr:    *config.ServerAddr,
@@ -56,5 +74,4 @@ func main() {
 			log.Fatalf("HTTP server error: %v", err)
 		}
 	}
-
 }

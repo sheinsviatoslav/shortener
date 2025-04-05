@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package shortener;
+
+option go_package = "github.com/sheinsviatoslav/shortener/proto";
+
+message CreateShortURLRequest {
+  string original_url = 1;
+  string user_id = 2;
+}
+
+message CreateShortURLResponse {
+  string short_url = 1;
+  string error = 2;
+}
+
+message GetOriginalURLRequest {
+  string short_url = 1;
+}
+
+message GetOriginalURLResponse {
+  string original_url = 1;
+}
+
+message InputManyUrlsItem {
+  string correlation_id = 1;
+  string original_url = 2;
+}
+
+message OutputManyUrlsItem {
+ string correlation_id = 1;
+ string short_url = 2;
+}
+
+message ShortenBatchRequest {
+  repeated InputManyUrlsItem urls = 1;
+  string user_id = 2;
+}
+
+message ShortenBatchResponse {
+  repeated OutputManyUrlsItem urls = 1;
+  string error = 2;
+}
+
+message UserUrlsItem {
+    string short_url = 1;
+    string original_url = 2;
+}
+
+message GetUserUrlsRequest {
+  string user_id = 1;
+}
+
+message GetUserUrlsResponse {
+  repeated UserUrlsItem user_urls = 1;
+  string error = 2;
+}
+
+message DeleteUserUrlsRequest {
+  repeated string short_urls = 1;
+  string user_id = 2;
+}
+
+message DeleteUserUrlsResponse {
+  string error = 1;
+}
+
+service Urls {
+  rpc CreateShortURL(CreateShortURLRequest) returns (CreateShortURLResponse);
+  rpc GetOriginalURL(GetOriginalURLRequest) returns (GetOriginalURLResponse);
+  rpc ShortenBatch(ShortenBatchRequest) returns (ShortenBatchResponse);
+  rpc GetUserUrls(GetUserUrlsRequest) returns (GetUserUrlsResponse);
+  rpc DeleteUserUrls(DeleteUserUrlsRequest) returns (DeleteUserUrlsResponse);
+}
