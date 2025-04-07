@@ -118,9 +118,5 @@ func (s *UrlsServer) DeleteUserUrls(ctx context.Context, in *pb.DeleteUserUrlsRe
 		_ = s.storage.DeleteUserUrls(ctx, in.ShortUrls, id)
 	}(in.ShortUrls, in.UserId)
 
-	if err := s.storage.DeleteUserUrls(ctx, in.ShortUrls, in.UserId); err != nil {
-		return &response, err
-	}
-
 	return &response, nil
 }
