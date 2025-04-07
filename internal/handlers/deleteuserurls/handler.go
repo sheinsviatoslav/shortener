@@ -58,11 +58,6 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		_ = h.storage.DeleteUserUrls(r.Context(), reqBody, id)
 	}(reqBody, userID)
 
-	if err = h.storage.DeleteUserUrls(r.Context(), reqBody, userID); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 }

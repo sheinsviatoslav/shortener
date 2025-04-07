@@ -29,6 +29,12 @@ type UserUrlsItem struct {
 // UserUrls is type for output in GetUserUrls function
 type UserUrls []UserUrlsItem
 
+// Stats is type for amount of users and urls
+type Stats struct {
+	Urls  int `json:"urls"`
+	Users int `json:"users"`
+}
+
 // Storage is the interface for api functions
 type Storage interface {
 	GetOriginalURLByShortURL(context.Context, string) (string, bool, error)
@@ -37,4 +43,5 @@ type Storage interface {
 	AddManyUrls(context.Context, InputManyUrls, string) (OutputManyUrls, error)
 	GetUserUrls(context.Context, string) (UserUrls, error)
 	DeleteUserUrls(context.Context, []string, string) error
+	GetStats(context.Context) (Stats, error)
 }
